@@ -1,0 +1,147 @@
+{
+  "formatVersion": 1,
+  "id": "kubohiroyawebrtc",
+  "blocks": [
+    {
+      "opcode": "acceptAnswer",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CODE",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "acceptOffer",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CODE",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "clearMessages",
+      "blockType": "COMMAND",
+      "arguments": []
+    },
+    {
+      "opcode": "closePeer",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "connectedPeers",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "connectionState",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "createOffer",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "getAnswer",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "getOffer",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "hasMessages",
+      "blockType": "BOOLEAN",
+      "arguments": []
+    },
+    {
+      "opcode": "lastMessage",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "messageCount",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "nextMessage",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "sendEvent",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PAYLOAD",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        },
+        {
+          "id": "TYPE",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "setIceMode",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "MODE",
+          "type": "STRING"
+        }
+      ]
+    }
+  ],
+  "menus": []
+}

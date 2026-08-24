@@ -1,0 +1,59 @@
+import {readFile, writeFile} from 'node:fs/promises';
+
+const START = '<!-- BEGIN GENERATED BLOCKS -->';
+const END = '<!-- END GENERATED BLOCKS -->';
+
+const definitions = JSON.parse(
+  await readFile(new URL('../src/block-definitions.json', import.meta.url), 'utf8')
+);
+const generated = definitions.blocks.map(renderBlock).join('\n\n');
+const replacement = `${START}\n\n${generated}\n\n${END}`;
+
+for (const fileName of ['README.md', 'README.ja.md']) {
+  const readmeUrl = new URL(`../${fileName}`, import.meta.url);
+  const readme = await readFile(readmeUrl, 'utf8');
+
+  if (!readme.includes(START) || !readme.includes(END)) {
+    throw new Error(`${fileName} does not contain the generated block markers.`);
+  }
+
+  const next = readme.replace(
+    new RegExp(`${escapeRegExp(START)}[\\s\\S]*?${escapeRegExp(END)}`),
+    replacement
+  );
+  await writeFile(readmeUrl, next);
+}
+
+function renderBlock(block) {
+  const rows = [
+    ['Type', titleCase(block.blockType)],
+    ['Opcode', `\`${block.opcode}\``]
+  ];
+  for (const [name, argument] of Object.entries(block.arguments ?? {})) {
+    rows.push([
+      `\`${name}\``,
+      `${titleCase(argument.type)}, default: \`${formatDefault(argument.defaultValue)}\``
+    ]);
+  }
+  return [
+    `### \`${block.text}\``,
+    '',
+    block.description,
+    '',
+    '| Property | Value |',
+    '|---|---|',
+    ...rows.map(([name, value]) => `| ${name} | ${value} |`)
+  ].join('\n');
+}
+
+function titleCase(value) {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
+function formatDefault(value) {
+  return String(value).replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll('`', '\\`');
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
