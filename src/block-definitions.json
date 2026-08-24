@@ -1,0 +1,133 @@
+{
+  "extensionName": "WebRTC Manual Pairing",
+  "blocks": [
+    {
+      "opcode": "setIceMode",
+      "blockType": "COMMAND",
+      "text": "set ICE mode [MODE]",
+      "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.",
+      "arguments": {
+        "MODE": {"type": "STRING", "defaultValue": "lan"}
+      }
+    },
+    {
+      "opcode": "createOffer",
+      "blockType": "COMMAND",
+      "text": "create offer code for peer [PEER]",
+      "description": "Creates a manual pairing offer code for the named peer.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "getOffer",
+      "blockType": "REPORTER",
+      "text": "offer code for peer [PEER]",
+      "description": "Returns the latest offer code generated for the named peer.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "acceptOffer",
+      "blockType": "COMMAND",
+      "text": "accept offer code [CODE] as peer [PEER]",
+      "description": "Accepts a peer's offer code and creates an answer code.",
+      "arguments": {
+        "CODE": {"type": "STRING", "defaultValue": "offer-code"},
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "getAnswer",
+      "blockType": "REPORTER",
+      "text": "answer code for peer [PEER]",
+      "description": "Returns the latest answer code generated for the named peer.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "acceptAnswer",
+      "blockType": "COMMAND",
+      "text": "accept answer code [CODE] for peer [PEER]",
+      "description": "Completes pairing by accepting a peer's answer code.",
+      "arguments": {
+        "CODE": {"type": "STRING", "defaultValue": "answer-code"},
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "sendEvent",
+      "blockType": "COMMAND",
+      "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.",
+      "arguments": {
+        "TYPE": {"type": "STRING", "defaultValue": "door-open"},
+        "PAYLOAD": {"type": "STRING", "defaultValue": "{}"},
+        "CHANNEL": {"type": "STRING", "defaultValue": "default"},
+        "PEER": {"type": "STRING", "defaultValue": "*"}
+      }
+    },
+    {
+      "opcode": "hasMessages",
+      "blockType": "BOOLEAN",
+      "text": "has received messages?",
+      "description": "Reports whether the receive queue contains at least one message.",
+      "arguments": {}
+    },
+    {
+      "opcode": "messageCount",
+      "blockType": "REPORTER",
+      "text": "received message count",
+      "description": "Returns the number of messages currently waiting in the receive queue.",
+      "arguments": {}
+    },
+    {
+      "opcode": "nextMessage",
+      "blockType": "REPORTER",
+      "text": "next received message",
+      "description": "Removes and returns the oldest received message as JSON.",
+      "arguments": {}
+    },
+    {
+      "opcode": "lastMessage",
+      "blockType": "REPORTER",
+      "text": "last received message",
+      "description": "Returns the most recent received message as JSON without removing it.",
+      "arguments": {}
+    },
+    {
+      "opcode": "clearMessages",
+      "blockType": "COMMAND",
+      "text": "clear received messages",
+      "description": "Clears the receive queue.",
+      "arguments": {}
+    },
+    {
+      "opcode": "connectionState",
+      "blockType": "REPORTER",
+      "text": "connection state of peer [PEER]",
+      "description": "Returns the WebRTC connection state for the named peer.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "connectedPeers",
+      "blockType": "REPORTER",
+      "text": "connected peers",
+      "description": "Returns a JSON array of connected peer names.",
+      "arguments": {}
+    },
+    {
+      "opcode": "closePeer",
+      "blockType": "COMMAND",
+      "text": "close peer [PEER]",
+      "description": "Closes and removes a peer connection.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    }
+  ]
+}
