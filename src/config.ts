@@ -5,5 +5,5 @@ export const extensionConfig = {
   description: 'Peer-to-peer DataChannel messaging for TurboWarp with manual pairing codes.',
   author: 'Hiroya Kubo',
   license: 'MPL-2.0',
-  unsandboxed: false
+  unsandboxed: true
 } as const;

@@ -1,13 +1,15 @@
 import {extensionConfig} from './config.js';
 import definitions from './block-definitions.json';
 import {ManualPeerSession, type PeerSessionPort} from './manual-peer-session.js';
+import type {ReceivedEnvelope} from './protocol.js';
 
-type BlockTypeName = 'COMMAND' | 'REPORTER' | 'BOOLEAN';
+type BlockTypeName = 'COMMAND' | 'REPORTER' | 'BOOLEAN' | 'EVENT';
 type ArgumentTypeName = 'STRING';
 
 interface DefinitionArgument {
   type: ArgumentTypeName;
   defaultValue: string;
+  menu?: string;
 }
 
 interface BlockDefinition {
@@ -16,22 +18,28 @@ interface BlockDefinition {
   text: string;
   description: string;
   arguments: Record<string, DefinitionArgument>;
+  isEdgeActivated?: boolean;
 }
 
 const blockDefinitions = definitions.blocks as readonly BlockDefinition[];
+const networkMessageHatOpcode = `${extensionConfig.id}_whenReceiveNetworkMessage`;
+const networkMessageThreadContextKey = '__turbowarpWebRtcNetworkMessage';
 
 export class WebRtcManualPairingExtension implements TurboWarpExtension {
   private readonly session: PeerSessionPort;
+  private latestNetworkMessage: ReceivedEnvelope | undefined;
 
   public constructor(session: PeerSessionPort = new ManualPeerSession()) {
     this.session = session;
+    this.session.setMessageHandler((message) => this.startNetworkMessageHats(message));
   }
 
   public getInfo(): Record<string, unknown> {
     return {
       id: extensionConfig.id,
       name: Scratch.translate(definitions.extensionName),
-      blocks: blockDefinitions.map((block) => this.toScratchBlock(block))
+      blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
+      menus: definitions.menus
     };
   }
 
@@ -66,6 +74,37 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
       Scratch.Cast.toString(args.PAYLOAD),
       Scratch.Cast.toString(args.CHANNEL)
     );
+  }
+
+  public broadcastNetworkMessage(args: {
+    MESSAGE: unknown;
+    PAYLOAD: unknown;
+    CHANNEL: unknown;
+    PEER: unknown;
+  }): void {
+    this.session.sendEvent(
+      Scratch.Cast.toString(args.PEER),
+      Scratch.Cast.toString(args.MESSAGE),
+      Scratch.Cast.toString(args.PAYLOAD),
+      Scratch.Cast.toString(args.CHANNEL)
+    );
+  }
+
+  public networkMessagePayload(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+    const message = this.networkMessageFor(util);
+    return message ? JSON.stringify(message.payload) : '';
+  }
+
+  public networkMessageSender(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+    return this.networkMessageFor(util)?.from ?? '';
+  }
+
+  public networkMessagePeer(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+    return this.networkMessageFor(util)?.peer ?? '';
+  }
+
+  public networkMessageChannel(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+    return this.networkMessageFor(util)?.channel ?? '';
   }
 
   public hasMessages(): boolean {
@@ -104,20 +143,51 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     return Scratch.Cast.toString(value).trim() || 'peer';
   }
 
+  private startNetworkMessageHats(message: ReceivedEnvelope): void {
+    this.latestNetworkMessage = message;
+    this.attachNetworkMessageContext(
+      Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {MESSAGE: message.type}) ?? [],
+      message
+    );
+    if (message.type !== '*') {
+      this.attachNetworkMessageContext(
+        Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {MESSAGE: '*'}) ?? [],
+        message
+      );
+    }
+  }
+
+  private attachNetworkMessageContext(threads: TurboWarpThread[], message: ReceivedEnvelope): void {
+    for (const thread of threads) {
+      thread[networkMessageThreadContextKey] = message;
+    }
+  }
+
+  private networkMessageFor(util: TurboWarpBlockUtility | undefined): ReceivedEnvelope | undefined {
+    const threadMessage = util?.thread?.[networkMessageThreadContextKey];
+    return isReceivedEnvelope(threadMessage) ? threadMessage : this.latestNetworkMessage;
+  }
+
   private toScratchBlock(block: BlockDefinition): Record<string, unknown> {
     return {
       opcode: block.opcode,
       blockType: Scratch.BlockType[block.blockType],
       text: Scratch.translate(block.text),
+      ...(block.isEdgeActivated === undefined ? {} : {isEdgeActivated: block.isEdgeActivated}),
       arguments: Object.fromEntries(
         Object.entries(block.arguments).map(([name, argument]) => [
           name,
           {
             type: Scratch.ArgumentType[argument.type],
-            defaultValue: argument.defaultValue
+            defaultValue: argument.defaultValue,
+            ...(argument.menu === undefined ? {} : {menu: argument.menu})
           }
         ])
       )
     };
   }
+}
+
+function isReceivedEnvelope(value: unknown): value is ReceivedEnvelope {
+  return typeof value === 'object' && value !== null && 'type' in value && 'payload' in value;
 }

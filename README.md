@@ -10,6 +10,11 @@ Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as t
 - LAN-first ICE configuration by default.
 - JSON event envelopes with a receive queue.
 - Multiple named peers.
+- TurboWarp hat blocks for received network messages.
+
+## Runtime Requirements
+
+This extension must run as an unsandboxed extension. It uses WebRTC DataChannel APIs for transport and TurboWarp VM runtime APIs to start network message hat blocks. Loading it as a sandboxed extension fails at startup.
 
 ## Pairing Flow
 
@@ -20,9 +25,24 @@ Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as t
 5. On the host project, run `accept answer code [CODE] for peer [PEER]`.
 6. Send events after the connection state becomes `connected`.
 
+## Network Broadcasts
+
+`broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]` sends a message to a peer using the existing JSON envelope format. Set `PEER` to `*` to send to every connected peer.
+
+On the receiving side, `when I receive network message [MESSAGE]` starts matching scripts. `MESSAGE` is matched against the received envelope's `type`. A hat with `MESSAGE` set to `*` acts as a catch-all handler for every network message.
+
+Hat scripts can read the received message with these reporters:
+
+- `network message payload`: returns the payload as a JSON string.
+- `network message sender`: returns the sender's local ID.
+- `network message peer`: returns the peer name used by this connection.
+- `network message channel`: returns the envelope channel.
+
+There is no `broadcast ... and wait` equivalent yet. Waiting for remote scripts to finish requires an ACK/completion protocol, so it is treated as a separate feature from regular network broadcast delivery.
+
 ## Message Format
 
-`send event` serializes payloads as JSON envelopes:
+`send event` and `broadcast network message` serialize payloads as JSON envelopes:
 
 ```json
 {
@@ -117,6 +137,65 @@ Sends a JSON event envelope to one peer, or to all peers when PEER is *.
 | `PAYLOAD` | String, default: `{}` |
 | `CHANNEL` | String, default: `default` |
 | `PEER` | String, default: `*` |
+
+### `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]`
+
+Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `broadcastNetworkMessage` |
+| `MESSAGE` | String, default: `door-open` |
+| `PAYLOAD` | String, default: `{}` |
+| `CHANNEL` | String, default: `default` |
+| `PEER` | String, default: `*` |
+
+### `when I receive network message [MESSAGE]`
+
+Starts scripts when a matching network broadcast message is received.
+
+| Property | Value |
+|---|---|
+| Type | Event |
+| Opcode | `whenReceiveNetworkMessage` |
+| `MESSAGE` | String, default: `door-open` |
+
+### `network message payload`
+
+Returns the payload of the most recently received network broadcast message as JSON.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `networkMessagePayload` |
+
+### `network message sender`
+
+Returns the sender ID of the most recently received network broadcast message.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `networkMessageSender` |
+
+### `network message peer`
+
+Returns the local peer name that received the most recent network broadcast message.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `networkMessagePeer` |
+
+### `network message channel`
+
+Returns the channel of the most recently received network broadcast message.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `networkMessageChannel` |
 
 ### `has received messages?`
 
