@@ -11,6 +11,7 @@ import {
 } from './protocol.js';
 
 export type IceMode = 'lan' | 'stun';
+export type MessageHandler = (message: ReceivedEnvelope) => void;
 
 export interface ManualPeerSessionOptions {
   localId?: string;
@@ -25,6 +26,7 @@ export interface PeerSessionPort {
   getAnswer(peer: string): string;
   acceptAnswer(peer: string, code: string): Promise<void>;
   sendEvent(peer: string, type: string, payloadText: string, channel: string): void;
+  setMessageHandler(handler: MessageHandler | undefined): void;
   hasMessages(): boolean;
   messageCount(): number;
   nextMessage(): string;
@@ -52,6 +54,7 @@ export class ManualPeerSession implements PeerSessionPort {
   private iceMode: IceMode = 'lan';
   private receiveQueue: ReceivedEnvelope[] = [];
   private latestMessage: ReceivedEnvelope | undefined;
+  private messageHandler: MessageHandler | undefined;
   private seq = 0;
 
   public constructor(options: ManualPeerSessionOptions = {}) {
@@ -114,6 +117,10 @@ export class ManualPeerSession implements PeerSessionPort {
     for (const target of targets) {
       this.sendToPeer(target, this.createEnvelope(type, payloadText, channel));
     }
+  }
+
+  public setMessageHandler(handler: MessageHandler | undefined): void {
+    this.messageHandler = handler;
   }
 
   public hasMessages(): boolean {
@@ -221,6 +228,11 @@ export class ManualPeerSession implements PeerSessionPort {
       this.receiveQueue.shift();
     }
     this.latestMessage = message;
+    try {
+      this.messageHandler?.(message);
+    } catch {
+      // Delivery hooks must not corrupt the transport queue.
+    }
   }
 
   private makePairingCode(kind: PairingCode['kind'], description: RTCSessionDescription | null): string {

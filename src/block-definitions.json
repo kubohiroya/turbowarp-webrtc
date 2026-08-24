@@ -70,6 +70,60 @@
       }
     },
     {
+      "opcode": "broadcastNetworkMessage",
+      "blockType": "COMMAND",
+      "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "description": "Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.",
+      "arguments": {
+        "MESSAGE": {"type": "STRING", "defaultValue": "door-open"},
+        "PAYLOAD": {"type": "STRING", "defaultValue": "{}"},
+        "CHANNEL": {"type": "STRING", "defaultValue": "default"},
+        "PEER": {"type": "STRING", "defaultValue": "*"}
+      }
+    },
+    {
+      "opcode": "whenReceiveNetworkMessage",
+      "blockType": "EVENT",
+      "text": "when I receive network message [MESSAGE]",
+      "description": "Starts scripts when a matching network broadcast message is received.",
+      "isEdgeActivated": false,
+      "arguments": {
+        "MESSAGE": {
+          "type": "STRING",
+          "defaultValue": "door-open",
+          "menu": "networkMessages"
+        }
+      }
+    },
+    {
+      "opcode": "networkMessagePayload",
+      "blockType": "REPORTER",
+      "text": "network message payload",
+      "description": "Returns the payload of the most recently received network broadcast message as JSON.",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessageSender",
+      "blockType": "REPORTER",
+      "text": "network message sender",
+      "description": "Returns the sender ID of the most recently received network broadcast message.",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessagePeer",
+      "blockType": "REPORTER",
+      "text": "network message peer",
+      "description": "Returns the local peer name that received the most recent network broadcast message.",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessageChannel",
+      "blockType": "REPORTER",
+      "text": "network message channel",
+      "description": "Returns the channel of the most recently received network broadcast message.",
+      "arguments": {}
+    },
+    {
       "opcode": "hasMessages",
       "blockType": "BOOLEAN",
       "text": "has received messages?",
@@ -129,5 +183,11 @@
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
     }
-  ]
+  ],
+  "menus": {
+    "networkMessages": {
+      "acceptReporters": false,
+      "items": ["door-open", "event", "*"]
+    }
+  }
 }

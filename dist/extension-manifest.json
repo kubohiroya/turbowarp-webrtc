@@ -31,6 +31,28 @@
       ]
     },
     {
+      "opcode": "broadcastNetworkMessage",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "MESSAGE",
+          "type": "STRING"
+        },
+        {
+          "id": "PAYLOAD",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "clearMessages",
       "blockType": "COMMAND",
       "arguments": []
@@ -106,6 +128,26 @@
       "arguments": []
     },
     {
+      "opcode": "networkMessageChannel",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "networkMessagePayload",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "networkMessagePeer",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "networkMessageSender",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
       "opcode": "nextMessage",
       "blockType": "REPORTER",
       "arguments": []
@@ -141,7 +183,23 @@
           "type": "STRING"
         }
       ]
+    },
+    {
+      "opcode": "whenReceiveNetworkMessage",
+      "blockType": "EVENT",
+      "arguments": [
+        {
+          "id": "MESSAGE",
+          "type": "STRING",
+          "menu": "networkMessages"
+        }
+      ]
     }
   ],
-  "menus": []
+  "menus": [
+    {
+      "id": "networkMessages",
+      "acceptReporters": false
+    }
+  ]
 }

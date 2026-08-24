@@ -8,13 +8,16 @@
   'use strict';
 
   const extensionConfig = {
-    id: "kubohiroyawebrtc"
+    id: "kubohiroyawebrtc",
+    name: "WebRTC Manual Pairing"
   };
   const extensionName = "WebRTC Manual Pairing";
-  const blocks = [{ "opcode": "setIceMode", "blockType": "COMMAND", "text": "set ICE mode [MODE]", "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.", "arguments": { "MODE": { "type": "STRING", "defaultValue": "lan" } } }, { "opcode": "createOffer", "blockType": "COMMAND", "text": "create offer code for peer [PEER]", "description": "Creates a manual pairing offer code for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getOffer", "blockType": "REPORTER", "text": "offer code for peer [PEER]", "description": "Returns the latest offer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptOffer", "blockType": "COMMAND", "text": "accept offer code [CODE] as peer [PEER]", "description": "Accepts a peer's offer code and creates an answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "offer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getAnswer", "blockType": "REPORTER", "text": "answer code for peer [PEER]", "description": "Returns the latest answer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptAnswer", "blockType": "COMMAND", "text": "accept answer code [CODE] for peer [PEER]", "description": "Completes pairing by accepting a peer's answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "answer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "sendEvent", "blockType": "COMMAND", "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.", "arguments": { "TYPE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "hasMessages", "blockType": "BOOLEAN", "text": "has received messages?", "description": "Reports whether the receive queue contains at least one message.", "arguments": {} }, { "opcode": "messageCount", "blockType": "REPORTER", "text": "received message count", "description": "Returns the number of messages currently waiting in the receive queue.", "arguments": {} }, { "opcode": "nextMessage", "blockType": "REPORTER", "text": "next received message", "description": "Removes and returns the oldest received message as JSON.", "arguments": {} }, { "opcode": "lastMessage", "blockType": "REPORTER", "text": "last received message", "description": "Returns the most recent received message as JSON without removing it.", "arguments": {} }, { "opcode": "clearMessages", "blockType": "COMMAND", "text": "clear received messages", "description": "Clears the receive queue.", "arguments": {} }, { "opcode": "connectionState", "blockType": "REPORTER", "text": "connection state of peer [PEER]", "description": "Returns the WebRTC connection state for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "connectedPeers", "blockType": "REPORTER", "text": "connected peers", "description": "Returns a JSON array of connected peer names.", "arguments": {} }, { "opcode": "closePeer", "blockType": "COMMAND", "text": "close peer [PEER]", "description": "Closes and removes a peer connection.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }];
+  const blocks = [{ "opcode": "setIceMode", "blockType": "COMMAND", "text": "set ICE mode [MODE]", "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.", "arguments": { "MODE": { "type": "STRING", "defaultValue": "lan" } } }, { "opcode": "createOffer", "blockType": "COMMAND", "text": "create offer code for peer [PEER]", "description": "Creates a manual pairing offer code for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getOffer", "blockType": "REPORTER", "text": "offer code for peer [PEER]", "description": "Returns the latest offer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptOffer", "blockType": "COMMAND", "text": "accept offer code [CODE] as peer [PEER]", "description": "Accepts a peer's offer code and creates an answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "offer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getAnswer", "blockType": "REPORTER", "text": "answer code for peer [PEER]", "description": "Returns the latest answer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptAnswer", "blockType": "COMMAND", "text": "accept answer code [CODE] for peer [PEER]", "description": "Completes pairing by accepting a peer's answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "answer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "sendEvent", "blockType": "COMMAND", "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.", "arguments": { "TYPE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "broadcastNetworkMessage", "blockType": "COMMAND", "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.", "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "whenReceiveNetworkMessage", "blockType": "EVENT", "text": "when I receive network message [MESSAGE]", "description": "Starts scripts when a matching network broadcast message is received.", "isEdgeActivated": false, "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open", "menu": "networkMessages" } } }, { "opcode": "networkMessagePayload", "blockType": "REPORTER", "text": "network message payload", "description": "Returns the payload of the most recently received network broadcast message as JSON.", "arguments": {} }, { "opcode": "networkMessageSender", "blockType": "REPORTER", "text": "network message sender", "description": "Returns the sender ID of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "networkMessagePeer", "blockType": "REPORTER", "text": "network message peer", "description": "Returns the local peer name that received the most recent network broadcast message.", "arguments": {} }, { "opcode": "networkMessageChannel", "blockType": "REPORTER", "text": "network message channel", "description": "Returns the channel of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "hasMessages", "blockType": "BOOLEAN", "text": "has received messages?", "description": "Reports whether the receive queue contains at least one message.", "arguments": {} }, { "opcode": "messageCount", "blockType": "REPORTER", "text": "received message count", "description": "Returns the number of messages currently waiting in the receive queue.", "arguments": {} }, { "opcode": "nextMessage", "blockType": "REPORTER", "text": "next received message", "description": "Removes and returns the oldest received message as JSON.", "arguments": {} }, { "opcode": "lastMessage", "blockType": "REPORTER", "text": "last received message", "description": "Returns the most recent received message as JSON without removing it.", "arguments": {} }, { "opcode": "clearMessages", "blockType": "COMMAND", "text": "clear received messages", "description": "Clears the receive queue.", "arguments": {} }, { "opcode": "connectionState", "blockType": "REPORTER", "text": "connection state of peer [PEER]", "description": "Returns the WebRTC connection state for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "connectedPeers", "blockType": "REPORTER", "text": "connected peers", "description": "Returns a JSON array of connected peer names.", "arguments": {} }, { "opcode": "closePeer", "blockType": "COMMAND", "text": "close peer [PEER]", "description": "Closes and removes a peer connection.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }];
+  const menus = { "networkMessages": { "acceptReporters": false, "items": ["door-open", "event", "*"] } };
   const definitions = {
     extensionName,
-    blocks
+    blocks,
+    menus
   };
   const protocolVersion = 1;
   function encodePairingCode(code) {
@@ -130,6 +133,9 @@
         this.sendToPeer(target, this.createEnvelope(type, payloadText, channel));
       }
     }
+    setMessageHandler(handler) {
+      this.messageHandler = handler;
+    }
     hasMessages() {
       return this.receiveQueue.length > 0;
     }
@@ -221,6 +227,10 @@
         this.receiveQueue.shift();
       }
       this.latestMessage = message;
+      try {
+        this.messageHandler?.(message);
+      } catch {
+      }
     }
     makePairingCode(kind, description) {
       if (!description) {
@@ -269,15 +279,19 @@
     return Math.random().toString(36).slice(2);
   }
   const blockDefinitions = definitions.blocks;
+  const networkMessageHatOpcode = `${extensionConfig.id}_whenReceiveNetworkMessage`;
+  const networkMessageThreadContextKey = "__turbowarpWebRtcNetworkMessage";
   class WebRtcManualPairingExtension {
     constructor(session = new ManualPeerSession()) {
       this.session = session;
+      this.session.setMessageHandler((message) => this.startNetworkMessageHats(message));
     }
     getInfo() {
       return {
         id: extensionConfig.id,
         name: Scratch.translate(definitions.extensionName),
-        blocks: blockDefinitions.map((block) => this.toScratchBlock(block))
+        blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
+        menus: definitions.menus
       };
     }
     setIceMode(args) {
@@ -306,6 +320,27 @@
         Scratch.Cast.toString(args.CHANNEL)
       );
     }
+    broadcastNetworkMessage(args) {
+      this.session.sendEvent(
+        Scratch.Cast.toString(args.PEER),
+        Scratch.Cast.toString(args.MESSAGE),
+        Scratch.Cast.toString(args.PAYLOAD),
+        Scratch.Cast.toString(args.CHANNEL)
+      );
+    }
+    networkMessagePayload(_args, util) {
+      const message = this.networkMessageFor(util);
+      return message ? JSON.stringify(message.payload) : "";
+    }
+    networkMessageSender(_args, util) {
+      return this.networkMessageFor(util)?.from ?? "";
+    }
+    networkMessagePeer(_args, util) {
+      return this.networkMessageFor(util)?.peer ?? "";
+    }
+    networkMessageChannel(_args, util) {
+      return this.networkMessageFor(util)?.channel ?? "";
+    }
     hasMessages() {
       return this.session.hasMessages();
     }
@@ -333,22 +368,52 @@
     peer(value) {
       return Scratch.Cast.toString(value).trim() || "peer";
     }
+    startNetworkMessageHats(message) {
+      this.latestNetworkMessage = message;
+      this.attachNetworkMessageContext(
+        Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, { MESSAGE: message.type }) ?? [],
+        message
+      );
+      if (message.type !== "*") {
+        this.attachNetworkMessageContext(
+          Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, { MESSAGE: "*" }) ?? [],
+          message
+        );
+      }
+    }
+    attachNetworkMessageContext(threads, message) {
+      for (const thread of threads) {
+        thread[networkMessageThreadContextKey] = message;
+      }
+    }
+    networkMessageFor(util) {
+      const threadMessage = util?.thread?.[networkMessageThreadContextKey];
+      return isReceivedEnvelope(threadMessage) ? threadMessage : this.latestNetworkMessage;
+    }
     toScratchBlock(block) {
       return {
         opcode: block.opcode,
         blockType: Scratch.BlockType[block.blockType],
         text: Scratch.translate(block.text),
+        ...block.isEdgeActivated === void 0 ? {} : { isEdgeActivated: block.isEdgeActivated },
         arguments: Object.fromEntries(
           Object.entries(block.arguments).map(([name, argument]) => [
             name,
             {
               type: Scratch.ArgumentType[argument.type],
-              defaultValue: argument.defaultValue
+              defaultValue: argument.defaultValue,
+              ...argument.menu === void 0 ? {} : { menu: argument.menu }
             }
           ])
         )
       };
     }
+  }
+  function isReceivedEnvelope(value) {
+    return typeof value === "object" && value !== null && "type" in value && "payload" in value;
+  }
+  if (!Scratch.extensions.unsandboxed) {
+    throw new Error(`${extensionConfig.name} must run unsandboxed.`);
   }
   Scratch.extensions.register(new WebRtcManualPairingExtension());
 
