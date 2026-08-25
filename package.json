@@ -1,18 +1,53 @@
 {
   "name": "@kubohiroya/turbowarp-webrtc",
   "version": "0.1.0",
+  "description": "Manual WebRTC DataChannel pairing for TurboWarp extensions.",
   "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
   "license": "MPL-2.0",
+  "homepage": "https://github.com/kubohiroya/turbowarp-webrtc#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kubohiroya/turbowarp-webrtc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kubohiroya/turbowarp-webrtc/issues"
+  },
+  "keywords": [
+    "turbowarp",
+    "scratch",
+    "extension",
+    "webrtc",
+    "datachannel",
+    "manual-pairing"
+  ],
   "type": "module",
+  "files": [
+    "dist/",
+    "schemas/",
+    "README.md",
+    "README.ja.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "lint": "eslint src tests vite.config.ts",
+    "lint": "eslint src tests scripts vite.config.ts",
     "test": "vitest run",
     "docs": "node scripts/generate-readme.mjs",
-    "docs:check": "pnpm run docs && git diff --exit-code -- README.md README.ja.md",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run docs:check && pnpm run check:dist",
+    "docs:check": "node scripts/generate-readme.mjs --check",
+    "repo:check": "node scripts/check-repo.mjs",
+    "pack:check": "npm pack --dry-run --ignore-scripts",
+    "release:check": "pnpm run check && pnpm publish --dry-run --access public --no-git-checks",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run docs:check && pnpm run check:dist && pnpm run repo:check && pnpm run pack:check",
     "check:dist": "pnpm run build && node scripts/check-dist.mjs"
   },
   "devDependencies": {

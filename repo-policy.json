@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "profile": "extension",
+  "productName": "TurboWarp WebRTC",
+  "packageName": "@kubohiroya/turbowarp-webrtc",
+  "extensionId": "kubohiroyawebrtc",
+  "bundle": "dist/turbowarp-webrtc.js",
+  "manifest": "dist/extension-manifest.json",
+  "canonicalReadme": "README.md",
+  "localizedReadmes": {
+    "ja": "README.ja.md"
+  },
+  "licensePolicy": "mpl-2.0",
+  "packageManager": "pnpm",
+  "requiredFiles": [
+    "package.json",
+    "README.md",
+    "README.ja.md",
+    "LICENSE",
+    "dist/turbowarp-webrtc.js",
+    "dist/extension-manifest.json",
+    "schemas/extension-manifest.schema.json"
+  ],
+  "runtimeBehaviorGuard": {
+    "extensionId": "kubohiroyawebrtc",
+    "opcodes": [
+      "acceptAnswer",
+      "acceptOffer",
+      "broadcastNetworkMessage",
+      "clearMessages",
+      "closePeer",
+      "connectedPeers",
+      "connectionState",
+      "createOffer",
+      "getAnswer",
+      "getOffer",
+      "hasMessages",
+      "lastMessage",
+      "messageCount",
+      "networkMessageChannel",
+      "networkMessagePayload",
+      "networkMessagePeer",
+      "networkMessageSender",
+      "nextMessage",
+      "sendEvent",
+      "setIceMode",
+      "whenReceiveNetworkMessage"
+    ]
+  },
+  "relatedIssues": [
+    "https://github.com/kubohiroya/turbowarp-webrtc/issues/2",
+    "https://github.com/kubohiroya/turbowarp-webrtc/issues/7"
+  ]
+}

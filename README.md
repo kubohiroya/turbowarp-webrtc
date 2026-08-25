@@ -1,8 +1,10 @@
-# turbowarp-webrtc
+# TurboWarp WebRTC
+
+[日本語](README.ja.md)
 
 Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as the low-level peer transport for TM Kamishibai and similar physical-event runtimes.
 
-## Goals
+## What it does
 
 - No persistent signaling server.
 - Manual offer/answer pairing by copy/paste or QR code.
@@ -12,11 +14,23 @@ Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as t
 - Multiple named peers.
 - TurboWarp hat blocks for received network messages.
 
-## Runtime Requirements
+## Requirements and safety
 
 This extension must run as an unsandboxed extension. It uses WebRTC DataChannel APIs for transport and TurboWarp VM runtime APIs to start network message hat blocks. Loading it as a sandboxed extension fails at startup.
 
-## Pairing Flow
+LAN mode avoids public STUN servers and is the default for local-room deployments. STUN mode can improve connectivity across networks but sends ICE discovery traffic to public STUN infrastructure. Manual signaling codes include connection descriptions and ICE candidates; exchange them only through a trusted channel and discard stale codes after pairing. Run `close peer [PEER]` when a connection is no longer needed so the underlying peer connection and DataChannel are closed.
+
+## Installation
+
+Install the package for local builds:
+
+```sh
+pnpm add @kubohiroya/turbowarp-webrtc@0.1.0
+```
+
+Use the generated unsandboxed bundle from `dist/turbowarp-webrtc.js` when loading the extension into TurboWarp.
+
+## Quick start
 
 1. On the host project, run `create offer code for peer [PEER]`.
 2. Copy `offer code for peer [PEER]` to the joining project.
@@ -25,7 +39,11 @@ This extension must run as an unsandboxed extension. It uses WebRTC DataChannel 
 5. On the host project, run `accept answer code [CODE] for peer [PEER]`.
 6. Send events after the connection state becomes `connected`.
 
-## Network Broadcasts
+## Block reference
+
+Generated from `src/block-definitions.json`. Do not edit the generated section by hand.
+
+## Network broadcasts
 
 `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]` sends a message to a peer using the existing JSON envelope format. Set `PEER` to `*` to send to every connected peer.
 
@@ -40,7 +58,11 @@ Hat scripts can read the received message with these reporters:
 
 There is no `broadcast ... and wait` equivalent yet. Waiting for remote scripts to finish requires an ACK/completion protocol, so it is treated as a separate feature from regular network broadcast delivery.
 
-## Message Format
+## Runtime behavior
+
+The extension keeps the existing WebRTC protocol, JSON message envelope, receive queue, hat block startup behavior, Extension ID, and opcodes unchanged. Existing browser-to-browser pairing behavior is covered separately by [issue #2](https://github.com/kubohiroya/turbowarp-webrtc/issues/2).
+
+## Message envelope
 
 `send event` and `broadcast network message` serialize payloads as JSON envelopes:
 
@@ -59,7 +81,9 @@ There is no `broadcast ... and wait` equivalent yet. Waiting for remote scripts 
 
 Received messages include an additional `peer` field.
 
-## Blocks
+## Compatibility and network limitations
+
+WebRTC availability depends on the browser and network policy. LAN mode is the predictable default for same-network devices; STUN mode may still fail on restrictive NATs or firewalls because this package does not provide a TURN relay or a signaling server.
 
 <!-- BEGIN GENERATED BLOCKS -->
 
@@ -276,12 +300,19 @@ Closes and removes a peer connection.
 ## Development
 
 ```sh
-npm install
-npm run check
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run check
 ```
 
 The build output is `dist/turbowarp-webrtc.js`.
 
+## Release
+
+Run `pnpm run release:check` before publishing. It runs the full check suite, verifies the package archive with `npm pack --dry-run --ignore-scripts`, and performs `pnpm publish --dry-run --access public --no-git-checks`. Roll back unpublished metadata changes by reverting the release PR.
+
 ## License
+
+SPDX-License-Identifier: MPL-2.0
 
 This project is licensed under the Mozilla Public License 2.0. See [LICENSE](LICENSE).

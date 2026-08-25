@@ -1,4 +1,6 @@
 import {execFile} from 'node:child_process';
+import process from 'node:process';
+import {URL} from 'node:url';
 import {fileURLToPath} from 'node:url';
 import {promisify} from 'node:util';
 

@@ -1,8 +1,10 @@
-# turbowarp-webrtc
+# TurboWarp WebRTC
 
-TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM紙芝居やリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。
+[English](README.md)
 
-## 目的
+TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM Kamishibaiやリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。
+
+## What it does
 
 - 常駐signalingサーバを置かない。
 - offer/answerをコピペまたはQRコードで手動交換する。
@@ -12,11 +14,23 @@ TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM紙
 - 名前付きpeerを複数扱える。
 - ネットワーク越しのmessage受信でTurboWarpのhat blockを起動できる。
 
-## 実行条件
+## Requirements and safety
 
 この拡張はunsandboxed extensionとして読み込む必要があります。WebRTC DataChannel自体に加えて、network messageのhat blockを起動するためにTurboWarp VMのruntime APIを使います。sandboxed extensionとして読み込まれた場合は起動時にエラーになります。
 
-## ペアリング手順
+LAN modeはpublic STUN serverを使わず、同じ部屋・同一LAN内の配置向けの既定値です。STUN modeはネットワーク越えの接続性を上げられる場合がありますが、public STUN infrastructureへICE discovery trafficを送ります。manual signaling codeにはconnection descriptionとICE candidateが含まれるため、信頼できる経路でだけ交換し、pairing後の古いcodeは破棄してください。接続終了時は `close peer [PEER]` を実行し、peer connectionとDataChannelを閉じます。
+
+## Installation
+
+ローカルビルドではpackageをinstallします。
+
+```sh
+pnpm add @kubohiroya/turbowarp-webrtc@0.1.0
+```
+
+TurboWarpへ読み込む場合は生成済みのunsandboxed bundle `dist/turbowarp-webrtc.js` を使います。
+
+## Quick start
 
 1. ホスト側で `create offer code for peer [PEER]` を実行する。
 2. `offer code for peer [PEER]` を参加側へ渡す。
@@ -24,6 +38,10 @@ TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM紙
 4. `answer code for peer [PEER]` をホスト側へ返す。
 5. ホスト側で `accept answer code [CODE] for peer [PEER]` を実行する。
 6. connection stateが `connected` になったらeventを送信する。
+
+## Block reference
+
+`src/block-definitions.json` から生成しています。生成範囲は手で編集しないでください。
 
 ## Network broadcast
 
@@ -40,7 +58,11 @@ hat配下では次のreporterで受信内容を読めます。
 
 `broadcast ... and wait` 相当のブロックはまだありません。リモート側のscript完了を待つにはACK/完了通知プロトコルが必要なため、通常のnetwork broadcastとは別機能として扱います。
 
-## メッセージ形式
+## Runtime behavior
+
+この拡張は既存のWebRTC protocol、JSON message envelope、receive queue、hat block起動、Extension ID、opcodeを変更しません。実ブラウザ同士のpairing検証は別途 [issue #2](https://github.com/kubohiroya/turbowarp-webrtc/issues/2) で扱います。
+
+## Message envelope
 
 `send event` と `broadcast network message` はpayloadをJSON envelopeとして送信します。
 
@@ -59,7 +81,9 @@ hat配下では次のreporterで受信内容を読めます。
 
 受信メッセージには追加で `peer` フィールドが入ります。
 
-## Blocks
+## Compatibility and network limitations
+
+WebRTCの利用可否はbrowserとnetwork policyに依存します。LAN modeは同一network内の端末向けの予測しやすい既定値です。STUN modeでも、制限の強いNATやfirewallでは接続できない場合があります。このpackageはTURN relayやsignaling serverを提供しません。
 
 <!-- BEGIN GENERATED BLOCKS -->
 
@@ -276,12 +300,19 @@ Closes and removes a peer connection.
 ## 開発
 
 ```sh
-npm install
-npm run check
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run check
 ```
 
 ビルド結果は `dist/turbowarp-webrtc.js` です。
 
+## Release
+
+公開前に `pnpm run release:check` を実行します。full check suite、`npm pack --dry-run --ignore-scripts` によるpackage archive検査、`pnpm publish --dry-run --access public --no-git-checks` をまとめて実行します。未公開のmetadata変更はrelease PRをrevertして戻します。
+
 ## ライセンス
+
+SPDX-License-Identifier: MPL-2.0
 
 このプロジェクトは Mozilla Public License 2.0 の下でライセンスされています。詳細は [LICENSE](LICENSE) を参照してください。
