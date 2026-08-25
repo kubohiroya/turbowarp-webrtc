@@ -1,7 +1,11 @@
 import {readFile, writeFile} from 'node:fs/promises';
+import process from 'node:process';
+import {URL} from 'node:url';
 
 const START = '<!-- BEGIN GENERATED BLOCKS -->';
 const END = '<!-- END GENERATED BLOCKS -->';
+const checkOnly = process.argv.includes('--check');
+const errors = [];
 
 const definitions = JSON.parse(
   await readFile(new URL('../src/block-definitions.json', import.meta.url), 'utf8')
@@ -21,7 +25,15 @@ for (const fileName of ['README.md', 'README.ja.md']) {
     new RegExp(`${escapeRegExp(START)}[\\s\\S]*?${escapeRegExp(END)}`),
     replacement
   );
-  await writeFile(readmeUrl, next);
+  if (checkOnly) {
+    if (next !== readme) errors.push(`${fileName} generated block reference is not up to date.`);
+  } else {
+    await writeFile(readmeUrl, next);
+  }
+}
+
+if (errors.length > 0) {
+  throw new Error(errors.join('\n'));
 }
 
 function renderBlock(block) {
