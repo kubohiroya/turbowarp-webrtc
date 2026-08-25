@@ -281,3 +281,7 @@ npm run check
 ```
 
 ビルド結果は `dist/turbowarp-webrtc.js` です。
+
+## ライセンス
+
+このプロジェクトは Mozilla Public License 2.0 の下でライセンスされています。詳細は [LICENSE](LICENSE) を参照してください。

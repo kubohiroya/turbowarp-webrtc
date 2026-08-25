@@ -2,6 +2,7 @@
   "name": "@kubohiroya/turbowarp-webrtc",
   "version": "0.1.0",
   "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
+  "license": "MPL-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
