@@ -2,14 +2,35 @@ import {readFile, writeFile} from 'node:fs/promises';
 import process from 'node:process';
 import {URL} from 'node:url';
 
+interface BlockArgument {
+  type: string;
+  defaultValue?: boolean | number | string;
+  menu?: string;
+}
+
+interface BlockDefinition {
+  opcode: string;
+  blockType: string;
+  text: string;
+  description: string;
+  arguments: Record<string, BlockArgument>;
+  isEdgeActivated?: boolean;
+}
+
+interface BlockDefinitions {
+  extensionName: string;
+  blocks: BlockDefinition[];
+  menus: Record<string, unknown>;
+}
+
 const START = '<!-- BEGIN GENERATED BLOCKS -->';
 const END = '<!-- END GENERATED BLOCKS -->';
 const checkOnly = process.argv.includes('--check');
-const errors = [];
+const errors: string[] = [];
 
 const definitions = JSON.parse(
   await readFile(new URL('../src/block-definitions.json', import.meta.url), 'utf8')
-);
+) as BlockDefinitions;
 const generated = definitions.blocks.map(renderBlock).join('\n\n');
 const replacement = `${START}\n\n${generated}\n\n${END}`;
 
@@ -36,7 +57,7 @@ if (errors.length > 0) {
   throw new Error(errors.join('\n'));
 }
 
-function renderBlock(block) {
+function renderBlock(block: BlockDefinition): string {
   const rows = [
     ['Type', titleCase(block.blockType)],
     ['Opcode', `\`${block.opcode}\``]
@@ -58,14 +79,14 @@ function renderBlock(block) {
   ].join('\n');
 }
 
-function titleCase(value) {
+function titleCase(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
-function formatDefault(value) {
+function formatDefault(value: BlockArgument['defaultValue']): string {
   return String(value).replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll('`', '\\`');
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
