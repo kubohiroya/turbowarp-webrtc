@@ -1,15 +1,22 @@
 import {extensionConfig} from './config.js';
 import definitions from './block-definitions.json';
+import {defaultFeatureFlags} from './feature-flags.js';
 import {ManualPeerSession, type PeerSessionPort} from './manual-peer-session.js';
 import type {ReceivedEnvelope} from './protocol.js';
+import {
+  createRuntimeCapability,
+  runtimeCapabilityKey,
+  runtimeCapabilityVersion,
+  type WebRtcRuntimeCapabilityV2
+} from './runtime-capability.js';
 import {SyncService} from './sync-service.js';
 
 type BlockTypeName = 'COMMAND' | 'REPORTER' | 'BOOLEAN' | 'EVENT';
-type ArgumentTypeName = 'STRING' | 'NUMBER';
+type ArgumentTypeName = 'STRING' | 'NUMBER' | 'BOOLEAN';
 
 interface DefinitionArgument {
   type: ArgumentTypeName;
-  defaultValue: string;
+  defaultValue: string | number | boolean;
   menu?: string;
 }
 
@@ -29,13 +36,22 @@ const networkMessageThreadContextKey = '__turbowarpWebRtcNetworkMessage';
 export class WebRtcManualPairingExtension implements TurboWarpExtension {
   private readonly session: PeerSessionPort;
   private readonly sync: SyncService;
+  private readonly runtimeCapability: WebRtcRuntimeCapabilityV2;
   private latestNetworkMessage: ReceivedEnvelope | undefined;
 
-  public constructor(session: PeerSessionPort = new ManualPeerSession(), sync?: SyncService) {
+  public constructor(
+    session: PeerSessionPort = new ManualPeerSession({
+      latestDataEnabled: defaultFeatureFlags.latestDataChannels
+    }),
+    sync?: SyncService
+  ) {
     this.session = session;
     this.sync = sync ?? new SyncService(session);
+    this.runtimeCapability = createRuntimeCapability(session);
     this.session.setMessageHandler((message) => this.startNetworkMessageHats(message));
     this.session.setInternalHandler((message) => this.sync.handleEnvelope(message));
+    const runtime = Scratch.vm?.runtime;
+    if (runtime) runtime[runtimeCapabilityKey] = this.runtimeCapability;
   }
 
   public getInfo(): Record<string, unknown> {
@@ -80,6 +96,58 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     );
   }
 
+  public setLatestDataEnabled(args: {ENABLED: unknown}): void {
+    this.session.setLatestDataEnabled(Scratch.Cast.toBoolean(args.ENABLED));
+  }
+
+  public configureLatestDataChannel(args: {
+    CHANNEL: unknown;
+    HIGH_WATER_MARK: unknown;
+    PEER: unknown;
+  }): void {
+    this.session.configureLatestDataChannel(
+      this.peer(args.PEER),
+      Scratch.Cast.toString(args.CHANNEL),
+      Scratch.Cast.toNumber(args.HIGH_WATER_MARK)
+    );
+  }
+
+  public sendLatestData(args: {PAYLOAD: unknown; CHANNEL: unknown; PEER: unknown}): void {
+    this.session.sendLatestData(
+      this.peer(args.PEER),
+      Scratch.Cast.toString(args.CHANNEL),
+      Scratch.Cast.toString(args.PAYLOAD)
+    );
+  }
+
+  public latestDataBufferedAmount(args: {CHANNEL: unknown; PEER: unknown}): number {
+    return this.latestDataStats(args).bufferedAmount;
+  }
+
+  public latestDataSentCount(args: {CHANNEL: unknown; PEER: unknown}): number {
+    return this.latestDataStats(args).sentCount;
+  }
+
+  public latestDataDroppedCount(args: {CHANNEL: unknown; PEER: unknown}): number {
+    return this.latestDataStats(args).droppedCount;
+  }
+
+  public latestDataChannelState(args: {CHANNEL: unknown; PEER: unknown}): string {
+    return this.latestDataStats(args).state;
+  }
+
+  public latestDataDropPolicy(): string {
+    return 'drop-newest';
+  }
+
+  public runtimeCapabilityVersion(): number {
+    return runtimeCapabilityVersion;
+  }
+
+  public requireRuntimeCapabilityVersion(args: {VERSION: unknown}): void {
+    this.runtimeCapability.requireVersion(Scratch.Cast.toNumber(args.VERSION));
+  }
+
   public broadcastNetworkMessage(args: {
     MESSAGE: unknown;
     PAYLOAD: unknown;
@@ -94,12 +162,18 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     );
   }
 
-  public networkMessagePayload(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+  public networkMessagePayload(
+    _args?: Record<string, unknown>,
+    util?: TurboWarpBlockUtility
+  ): string {
     const message = this.networkMessageFor(util);
     return message ? JSON.stringify(message.payload) : '';
   }
 
-  public networkMessageSender(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+  public networkMessageSender(
+    _args?: Record<string, unknown>,
+    util?: TurboWarpBlockUtility
+  ): string {
     return this.networkMessageFor(util)?.from ?? '';
   }
 
@@ -107,7 +181,10 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     return this.networkMessageFor(util)?.peer ?? '';
   }
 
-  public networkMessageChannel(_args?: Record<string, unknown>, util?: TurboWarpBlockUtility): string {
+  public networkMessageChannel(
+    _args?: Record<string, unknown>,
+    util?: TurboWarpBlockUtility
+  ): string {
     return this.networkMessageFor(util)?.channel ?? '';
   }
 
@@ -234,6 +311,14 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     this.sync.clearReport();
   }
 
+  public dispose(): void {
+    this.session.closeAll();
+    const runtime = Scratch.vm?.runtime;
+    if (runtime?.[runtimeCapabilityKey] === this.runtimeCapability) {
+      delete runtime[runtimeCapabilityKey];
+    }
+  }
+
   private peer(value: unknown): string {
     return Scratch.Cast.toString(value).trim() || 'peer';
   }
@@ -242,15 +327,23 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     return Scratch.Cast.toString(value).trim() || 'camera';
   }
 
+  private latestDataStats(args: {CHANNEL: unknown; PEER: unknown}) {
+    return this.session.latestDataStats(this.peer(args.PEER), Scratch.Cast.toString(args.CHANNEL));
+  }
+
   private startNetworkMessageHats(message: ReceivedEnvelope): void {
     this.latestNetworkMessage = message;
     this.attachNetworkMessageContext(
-      Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {MESSAGE: message.type}) ?? [],
+      Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {
+        MESSAGE: message.type
+      }) ?? [],
       message
     );
     if (message.type !== '*') {
       this.attachNetworkMessageContext(
-        Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {MESSAGE: '*'}) ?? [],
+        Scratch.vm?.runtime?.startHats(networkMessageHatOpcode, {
+          MESSAGE: '*'
+        }) ?? [],
         message
       );
     }

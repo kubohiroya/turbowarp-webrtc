@@ -3,8 +3,11 @@ import {WebRtcManualPairingExtension} from '../src/extension.js';
 import type {
   IceMode,
   InternalMessageHandler,
+  LatestDataChannelStats,
+  LatestDataSendResult,
   MessageHandler
 } from '../src/manual-peer-session.js';
+import {runtimeCapabilityKey} from '../src/runtime-capability.js';
 import {protocolVersion, type ReceivedEnvelope} from '../src/protocol.js';
 import {SyncService} from '../src/sync-service.js';
 import {
@@ -25,6 +28,14 @@ class FakeSession {
   public offers = new Map<string, string>();
   public answers = new Map<string, string>();
   public messages: string[] = ['{"type":"door-open"}'];
+  public latestStats: LatestDataChannelStats = {
+    state: 'open',
+    bufferedAmount: 12,
+    sentCount: 3,
+    droppedCount: 2,
+    highWaterMark: 1024,
+    dropPolicy: 'drop-newest'
+  };
   private messageHandler: MessageHandler | undefined;
   private internalHandler: InternalMessageHandler | undefined;
 
@@ -59,6 +70,23 @@ class FakeSession {
 
   public sendEvent(peer: string, type: string, payload: string, channel: string): void {
     this.calls.push(`sendEvent:${peer}:${type}:${payload}:${channel}`);
+  }
+
+  public setLatestDataEnabled(enabled: boolean): void {
+    this.calls.push(`setLatestDataEnabled:${enabled}`);
+  }
+
+  public configureLatestDataChannel(peer: string, channel: string, highWaterMark: number): void {
+    this.calls.push(`configureLatestDataChannel:${peer}:${channel}:${highWaterMark}`);
+  }
+
+  public sendLatestData(peer: string, channel: string, payload: string): LatestDataSendResult {
+    this.calls.push(`sendLatestData:${peer}:${channel}:${payload}`);
+    return 'sent';
+  }
+
+  public latestDataStats(): LatestDataChannelStats {
+    return this.latestStats;
   }
 
   public setMessageHandler(handler: MessageHandler | undefined): void {
@@ -132,17 +160,28 @@ class FakeSession {
   public closePeer(peer: string): void {
     this.calls.push(`closePeer:${peer}`);
   }
+
+  public closeAll(): void {
+    this.calls.push('closeAll');
+  }
 }
 
 beforeEach(() => {
   vi.stubGlobal('Scratch', {
-    BlockType: {COMMAND: 'command', REPORTER: 'reporter', BOOLEAN: 'boolean', EVENT: 'event'},
-    ArgumentType: {STRING: 'string', NUMBER: 'number'},
+    BlockType: {
+      COMMAND: 'command',
+      REPORTER: 'reporter',
+      BOOLEAN: 'boolean',
+      EVENT: 'event'
+    },
+    ArgumentType: {STRING: 'string', NUMBER: 'number', BOOLEAN: 'boolean'},
     Cast: {
       toString: (value: unknown) => String(value),
-      toNumber: (value: unknown) => Number(value)
+      toNumber: (value: unknown) => Number(value),
+      toBoolean: (value: unknown) => Boolean(value)
     },
-    translate: (message: string | {default: string}) => (typeof message === 'string' ? message : message.default),
+    translate: (message: string | {default: string}) =>
+      typeof message === 'string' ? message : message.default,
     vm: {
       runtime: {
         startHats: vi.fn(() => [{}])
@@ -210,6 +249,16 @@ describe('WebRtcManualPairingExtension', () => {
       'getAnswer',
       'acceptAnswer',
       'sendEvent',
+      'setLatestDataEnabled',
+      'configureLatestDataChannel',
+      'sendLatestData',
+      'latestDataBufferedAmount',
+      'latestDataSentCount',
+      'latestDataDroppedCount',
+      'latestDataChannelState',
+      'latestDataDropPolicy',
+      'runtimeCapabilityVersion',
+      'requireRuntimeCapabilityVersion',
       'broadcastNetworkMessage',
       'whenReceiveNetworkMessage',
       'networkMessagePayload',
@@ -252,7 +301,12 @@ describe('WebRtcManualPairingExtension', () => {
     await extension.createOffer({PEER: ' peer-a '});
     await extension.acceptOffer({PEER: 'peer-b', CODE: 'offer-code'});
     await extension.acceptAnswer({PEER: 'peer-a', CODE: 'answer-code'});
-    extension.sendEvent({PEER: '*', TYPE: 'door-open', PAYLOAD: '{"pin":1}', CHANNEL: 'default'});
+    extension.sendEvent({
+      PEER: '*',
+      TYPE: 'door-open',
+      PAYLOAD: '{"pin":1}',
+      CHANNEL: 'default'
+    });
     extension.broadcastNetworkMessage({
       PEER: 'peer-a',
       MESSAGE: 'light-on',
@@ -284,20 +338,75 @@ describe('WebRtcManualPairingExtension', () => {
     expect(extension.connectedPeers()).toBe('["peer-a"]');
   });
 
+  it('delegates latest-data blocks and reports transport state', () => {
+    const session = new FakeSession();
+    const extension = new WebRtcManualPairingExtension(session);
+
+    extension.setLatestDataEnabled({ENABLED: true});
+    extension.configureLatestDataChannel({
+      PEER: ' peer-a ',
+      CHANNEL: 'pose',
+      HIGH_WATER_MARK: 1024
+    });
+    extension.sendLatestData({
+      PEER: 'peer-a',
+      CHANNEL: 'pose',
+      PAYLOAD: '{"frame":1}'
+    });
+
+    expect(extension.latestDataBufferedAmount({PEER: 'peer-a', CHANNEL: 'pose'})).toBe(12);
+    expect(extension.latestDataSentCount({PEER: 'peer-a', CHANNEL: 'pose'})).toBe(3);
+    expect(extension.latestDataDroppedCount({PEER: 'peer-a', CHANNEL: 'pose'})).toBe(2);
+    expect(extension.latestDataChannelState({PEER: 'peer-a', CHANNEL: 'pose'})).toBe('open');
+    expect(extension.latestDataDropPolicy()).toBe('drop-newest');
+    expect(extension.runtimeCapabilityVersion()).toBe(2);
+    expect(session.calls).toEqual([
+      'setLatestDataEnabled:true',
+      'configureLatestDataChannel:peer-a:pose:1024',
+      'sendLatestData:peer-a:pose:{"frame":1}'
+    ]);
+  });
+
+  it('publishes a backward-compatible v2 runtime capability and cleans it up on dispose', async () => {
+    const session = new FakeSession();
+    const extension = new WebRtcManualPairingExtension(session);
+    const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
+    const capability = runtime[runtimeCapabilityKey] as {
+      version: number;
+      requireVersion(version: number): unknown;
+      createOffer(peer: string): Promise<string>;
+      getOffer(peer: string): string;
+    };
+
+    expect(capability.version).toBe(2);
+    expect(capability.requireVersion(1)).toBe(capability);
+    expect(capability.requireVersion(2)).toBe(capability);
+    await expect(capability.createOffer('peer-capability')).resolves.toBe('offer:peer-capability');
+    expect(capability.getOffer('peer-capability')).toBe('offer:peer-capability');
+    expect(() => capability.requireVersion(3)).toThrow(
+      'Unsupported WebRTC runtime capability version'
+    );
+    expect(() => extension.requireRuntimeCapabilityVersion({VERSION: 3})).toThrow(
+      'Unsupported WebRTC runtime capability version'
+    );
+
+    extension.dispose();
+    expect(session.calls).toContain('closeAll');
+    expect(runtime[runtimeCapabilityKey]).toBeUndefined();
+  });
+
   it('starts network message hats and exposes the received context', () => {
     const session = new FakeSession();
     const extension = new WebRtcManualPairingExtension(session);
 
     session.receive();
 
-    expect(startHatsMock()).toHaveBeenCalledWith(
-      'kubohiroyawebrtc_whenReceiveNetworkMessage',
-      {MESSAGE: 'door-open'}
-    );
-    expect(startHatsMock()).toHaveBeenCalledWith(
-      'kubohiroyawebrtc_whenReceiveNetworkMessage',
-      {MESSAGE: '*'}
-    );
+    expect(startHatsMock()).toHaveBeenCalledWith('kubohiroyawebrtc_whenReceiveNetworkMessage', {
+      MESSAGE: 'door-open'
+    });
+    expect(startHatsMock()).toHaveBeenCalledWith('kubohiroyawebrtc_whenReceiveNetworkMessage', {
+      MESSAGE: '*'
+    });
     const firstThread = startHatsMock().mock.results[0]?.value[0] as TestThread;
     expect(extension.networkMessagePayload({}, {thread: firstThread, startHats: vi.fn()})).toBe(
       '{"pin":1}'

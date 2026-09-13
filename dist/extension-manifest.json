@@ -113,6 +113,24 @@
       ]
     },
     {
+      "opcode": "configureLatestDataChannel",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "HIGH_WATER_MARK",
+          "type": "NUMBER"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "connectedPeers",
       "blockType": "REPORTER",
       "arguments": []
@@ -240,6 +258,67 @@
       "arguments": []
     },
     {
+      "opcode": "latestDataBufferedAmount",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "latestDataChannelState",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "latestDataDropPolicy",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "latestDataDroppedCount",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "latestDataSentCount",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "localTime",
       "blockType": "REPORTER",
       "arguments": []
@@ -311,6 +390,21 @@
       ]
     },
     {
+      "opcode": "requireRuntimeCapabilityVersion",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "VERSION",
+          "type": "NUMBER"
+        }
+      ]
+    },
+    {
+      "opcode": "runtimeCapabilityVersion",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
       "opcode": "sendEvent",
       "blockType": "COMMAND",
       "arguments": [
@@ -347,12 +441,40 @@
       ]
     },
     {
+      "opcode": "sendLatestData",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CHANNEL",
+          "type": "STRING"
+        },
+        {
+          "id": "PAYLOAD",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "setIceMode",
       "blockType": "COMMAND",
       "arguments": [
         {
           "id": "MODE",
           "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "setLatestDataEnabled",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "ENABLED",
+          "type": "BOOLEAN"
         }
       ]
     },

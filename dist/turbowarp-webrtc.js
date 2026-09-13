@@ -117,6 +117,144 @@
   			}
   		},
   		{
+  			"opcode": "setLatestDataEnabled",
+  			"blockType": "COMMAND",
+  			"text": "set latest-data channels enabled [ENABLED]",
+  			"description": "Opts in or out of unreliable latest-data channels. The default is disabled.",
+  			"arguments": { "ENABLED": {
+  				"type": "BOOLEAN",
+  				"defaultValue": false
+  			} }
+  		},
+  		{
+  			"opcode": "configureLatestDataChannel",
+  			"blockType": "COMMAND",
+  			"text": "configure latest-data channel [CHANNEL] high-water mark [HIGH_WATER_MARK] bytes for peer [PEER]",
+  			"description": "Configures a named latest-data channel before creating an offer.",
+  			"arguments": {
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"HIGH_WATER_MARK": {
+  					"type": "NUMBER",
+  					"defaultValue": 262144
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "sendLatestData",
+  			"blockType": "COMMAND",
+  			"text": "send latest data [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+  			"description": "Sends without waiting, or drops the new value when bufferedAmount exceeds the high-water mark.",
+  			"arguments": {
+  				"PAYLOAD": {
+  					"type": "STRING",
+  					"defaultValue": "{}"
+  				},
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "latestDataBufferedAmount",
+  			"blockType": "REPORTER",
+  			"text": "latest-data buffered bytes for channel [CHANNEL] peer [PEER]",
+  			"description": "Returns the browser DataChannel bufferedAmount for a named latest-data channel.",
+  			"arguments": {
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "latestDataSentCount",
+  			"blockType": "REPORTER",
+  			"text": "latest-data sent count for channel [CHANNEL] peer [PEER]",
+  			"description": "Returns the number of values handed to the named latest-data channel.",
+  			"arguments": {
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "latestDataDroppedCount",
+  			"blockType": "REPORTER",
+  			"text": "latest-data dropped count for channel [CHANNEL] peer [PEER]",
+  			"description": "Returns the number of new values dropped by backpressure.",
+  			"arguments": {
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "latestDataChannelState",
+  			"blockType": "REPORTER",
+  			"text": "latest-data state for channel [CHANNEL] peer [PEER]",
+  			"description": "Returns disabled, not-configured, connecting, open, closing, or closed.",
+  			"arguments": {
+  				"CHANNEL": {
+  					"type": "STRING",
+  					"defaultValue": "pose"
+  				},
+  				"PEER": {
+  					"type": "STRING",
+  					"defaultValue": "peer-a"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "latestDataDropPolicy",
+  			"blockType": "REPORTER",
+  			"text": "latest-data drop policy",
+  			"description": "Returns the fixed backpressure policy, drop-newest.",
+  			"arguments": {}
+  		},
+  		{
+  			"opcode": "runtimeCapabilityVersion",
+  			"blockType": "REPORTER",
+  			"text": "WebRTC runtime capability version",
+  			"description": "Returns the version of the runtime API for composite extensions.",
+  			"arguments": {}
+  		},
+  		{
+  			"opcode": "requireRuntimeCapabilityVersion",
+  			"blockType": "COMMAND",
+  			"text": "require WebRTC runtime capability version [VERSION]",
+  			"description": "Throws an explicit error when the requested runtime API version is unsupported.",
+  			"arguments": { "VERSION": {
+  				"type": "NUMBER",
+  				"defaultValue": 2
+  			} }
+  		},
+  		{
   			"opcode": "broadcastNetworkMessage",
   			"blockType": "COMMAND",
   			"text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
@@ -448,6 +586,9 @@
   		]
   	} }
   };
+  //#endregion
+  //#region src/feature-flags.ts
+  var defaultFeatureFlags = { latestDataChannels: false };
   function encodePairingCode(code) {
   	return encodeBase64Url(JSON.stringify(code));
   }
@@ -494,15 +635,20 @@
   //#endregion
   //#region src/manual-peer-session.ts
   var channelLabel = "tm-events";
+  var latestDataChannelLabelPrefix = "tm-latest:";
   var defaultQueueLimit = 200;
+  var defaultLatestDataHighWaterMark = 262144;
   var ManualPeerSession = class {
   	constructor(options = {}) {
   		this.peers = /* @__PURE__ */ new Map();
   		this.iceMode = "lan";
+  		this.latestDataConfigurations = /* @__PURE__ */ new Map();
   		this.receiveQueue = [];
   		this.seq = 0;
   		this.localId = options.localId ?? randomId();
   		this.queueLimit = options.queueLimit ?? defaultQueueLimit;
+  		this.latestDataEnabled = options.latestDataEnabled ?? false;
+  		this.peerConnectionFactory = options.peerConnectionFactory ?? ((configuration) => new RTCPeerConnection(configuration));
   	}
   	setIceMode(mode) {
   		const normalized = mode.trim().toLowerCase();
@@ -512,7 +658,14 @@
   	async createOffer(peer) {
   		const record = this.createPeer(peer);
   		const channel = record.connection.createDataChannel(channelLabel, { ordered: true });
-  		this.attachChannel(peer, record, channel);
+  		this.attachControlChannel(peer, record, channel);
+  		if (this.latestDataEnabled) for (const [name, highWaterMark] of this.configurationsFor(peer)) {
+  			const latestChannel = record.connection.createDataChannel(this.latestDataLabel(name), {
+  				ordered: false,
+  				maxRetransmits: 0
+  			});
+  			this.attachLatestDataChannel(peer, record, name, latestChannel, highWaterMark);
+  		}
   		const offer = await record.connection.createOffer();
   		await record.connection.setLocalDescription(offer);
   		await waitForIceGathering(record.connection);
@@ -547,6 +700,54 @@
   		const targets = peer.trim() === "*" ? this.connectedPeers() : [peer.trim()];
   		for (const target of targets) this.sendToPeer(target, this.createEnvelope(type, payloadText, channel));
   	}
+  	setLatestDataEnabled(enabled) {
+  		this.latestDataEnabled = enabled;
+  		if (!enabled) for (const record of this.peers.values()) {
+  			for (const latest of record.latestChannels.values()) latest.channel.close();
+  			record.latestChannels.clear();
+  		}
+  	}
+  	configureLatestDataChannel(peer, channel, highWaterMark) {
+  		const peerName = normalizeName(peer, "peer");
+  		const channelName = normalizeName(channel, "pose");
+  		const limit = normalizeHighWaterMark(highWaterMark);
+  		let configurations = this.latestDataConfigurations.get(peerName);
+  		if (!configurations) {
+  			configurations = /* @__PURE__ */ new Map();
+  			this.latestDataConfigurations.set(peerName, configurations);
+  		}
+  		configurations.set(channelName, limit);
+  	}
+  	sendLatestData(peer, channel, payloadText) {
+  		if (!this.latestDataEnabled) return "unavailable";
+  		const peerName = normalizeName(peer, "peer");
+  		const channelName = normalizeName(channel, "pose");
+  		const latest = this.peers.get(peerName)?.latestChannels.get(channelName);
+  		if (!latest || latest.channel.readyState !== "open") return "unavailable";
+  		if (latest.channel.bufferedAmount > latest.highWaterMark) {
+  			latest.droppedCount += 1;
+  			return "dropped";
+  		}
+  		latest.channel.send(serializeEnvelope(this.createEnvelope("latest-data", payloadText, channelName)));
+  		latest.sentCount += 1;
+  		return "sent";
+  	}
+  	latestDataStats(peer, channel) {
+  		if (!this.latestDataEnabled) return emptyLatestDataStats("disabled", 0);
+  		const peerName = normalizeName(peer, "peer");
+  		const channelName = normalizeName(channel, "pose");
+  		const configured = this.latestDataConfigurations.get(peerName)?.get(channelName);
+  		const latest = this.peers.get(peerName)?.latestChannels.get(channelName);
+  		if (!latest) return emptyLatestDataStats("not-configured", configured ?? 0);
+  		return {
+  			state: latest.channel.readyState,
+  			bufferedAmount: latest.channel.bufferedAmount,
+  			sentCount: latest.sentCount,
+  			droppedCount: latest.droppedCount,
+  			highWaterMark: latest.highWaterMark,
+  			dropPolicy: "drop-newest"
+  		};
+  	}
   	setMessageHandler(handler) {
   		this.messageHandler = handler;
   	}
@@ -574,30 +775,71 @@
   		return this.peers.get(peer.trim())?.connection.connectionState ?? "closed";
   	}
   	connectedPeers() {
-  		return [...this.peers.entries()].filter(([, record]) => record.connection.connectionState === "connected" && record.channel?.readyState === "open").map(([peer]) => peer);
+  		return [...this.peers.entries()].filter(([, record]) => record.connection.connectionState === "connected" && record.controlChannel?.readyState === "open").map(([peer]) => peer);
   	}
   	closePeer(peer) {
   		const key = peer.trim();
   		const record = this.peers.get(key);
   		if (!record) return;
-  		record.channel?.close();
+  		record.controlChannel?.close();
+  		for (const latest of record.latestChannels.values()) latest.channel.close();
   		record.connection.close();
   		this.peers.delete(key);
+  	}
+  	closeAll() {
+  		for (const peer of [...this.peers.keys()]) this.closePeer(peer);
+  		this.latestDataConfigurations.clear();
+  		this.setMessageHandler(void 0);
+  		this.setInternalHandler(void 0);
   	}
   	createPeer(peer) {
   		const key = peer.trim();
   		this.closePeer(key);
-  		const connection = new RTCPeerConnection(this.configuration());
-  		const record = { connection };
-  		connection.ondatachannel = (event) => this.attachChannel(key, record, event.channel);
+  		const connection = this.peerConnectionFactory(this.configuration());
+  		const record = {
+  			connection,
+  			latestChannels: /* @__PURE__ */ new Map()
+  		};
+  		connection.ondatachannel = (event) => this.acceptIncomingChannel(key, record, event.channel);
   		connection.onconnectionstatechange = () => {
-  			if (connection.connectionState === "failed" || connection.connectionState === "closed") record.channel?.close();
+  			if (connection.connectionState === "failed" || connection.connectionState === "closed") {
+  				record.controlChannel?.close();
+  				for (const latest of record.latestChannels.values()) latest.channel.close();
+  				delete record.controlChannel;
+  				record.latestChannels.clear();
+  			}
   		};
   		this.peers.set(key, record);
   		return record;
   	}
-  	attachChannel(peer, record, channel) {
-  		record.channel = channel;
+  	attachControlChannel(peer, record, channel) {
+  		record.controlChannel = channel;
+  		this.attachMessageHandler(peer, channel);
+  	}
+  	acceptIncomingChannel(peer, record, channel) {
+  		if (channel.label === channelLabel) {
+  			this.attachControlChannel(peer, record, channel);
+  			return;
+  		}
+  		const name = this.latestDataName(channel.label);
+  		if (!name || !this.latestDataEnabled) {
+  			channel.close();
+  			return;
+  		}
+  		const highWaterMark = this.latestDataConfigurations.get(peer)?.get(name) ?? 262144;
+  		this.attachLatestDataChannel(peer, record, name, channel, highWaterMark);
+  	}
+  	attachLatestDataChannel(peer, record, name, channel, highWaterMark) {
+  		record.latestChannels.get(name)?.channel.close();
+  		record.latestChannels.set(name, {
+  			channel,
+  			highWaterMark,
+  			sentCount: 0,
+  			droppedCount: 0
+  		});
+  		this.attachMessageHandler(peer, channel);
+  	}
+  	attachMessageHandler(peer, channel) {
   		channel.onmessage = (event) => {
   			if (typeof event.data !== "string") return;
   			try {
@@ -619,8 +861,8 @@
   	}
   	sendToPeer(peer, envelope) {
   		const record = this.requirePeer(peer);
-  		if (!record.channel || record.channel.readyState !== "open") throw new Error(`Peer ${peer} is not ready for sending.`);
-  		record.channel.send(serializeEnvelope(envelope));
+  		if (!record.controlChannel || record.controlChannel.readyState !== "open") throw new Error(`Peer ${peer} is not ready for sending.`);
+  		record.controlChannel.send(serializeEnvelope(envelope));
   	}
   	createEnvelope(type, payloadText, channel) {
   		return {
@@ -669,7 +911,37 @@
   		if (this.iceMode === "lan") return { iceServers: [] };
   		return { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
   	}
+  	configurationsFor(peer) {
+  		return this.latestDataConfigurations.get(normalizeName(peer, "peer")) ?? /* @__PURE__ */ new Map();
+  	}
+  	latestDataLabel(name) {
+  		return `${latestDataChannelLabelPrefix}${encodeURIComponent(name)}`;
+  	}
+  	latestDataName(label) {
+  		if (!label.startsWith(latestDataChannelLabelPrefix)) return void 0;
+  		try {
+  			return normalizeName(decodeURIComponent(label.slice(10)), "pose");
+  		} catch {
+  			return;
+  		}
+  	}
   };
+  function normalizeName(value, fallback) {
+  	return value.trim() || fallback;
+  }
+  function normalizeHighWaterMark(value) {
+  	return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : defaultLatestDataHighWaterMark;
+  }
+  function emptyLatestDataStats(state, highWaterMark) {
+  	return {
+  		state,
+  		bufferedAmount: 0,
+  		sentCount: 0,
+  		droppedCount: 0,
+  		highWaterMark,
+  		dropPolicy: "drop-newest"
+  	};
+  }
   function waitForIceGathering(connection) {
   	if (connection.iceGatheringState === "complete") return Promise.resolve();
   	return new Promise((resolve) => {
@@ -686,6 +958,23 @@
   function randomId() {
   	if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   	return Math.random().toString(36).slice(2);
+  }
+  var runtimeCapabilityKey = "kubohiroyaWebRtcCapability";
+  function createRuntimeCapability(session) {
+  	const capability = {
+  		version: 2,
+  		requireVersion(version) {
+  			if (version !== 1 && version !== 2) throw new Error(`Unsupported WebRTC runtime capability version: ${version}; supported versions are 1 and 2.`);
+  			return capability;
+  		},
+  		createOffer: (peer) => session.createOffer(peer),
+  		getOffer: (peer) => session.getOffer(peer),
+  		setLatestDataEnabled: (enabled) => session.setLatestDataEnabled(enabled),
+  		configureLatestDataChannel: (peer, channel, highWaterMark) => session.configureLatestDataChannel(peer, channel, highWaterMark),
+  		sendLatestData: (peer, channel, payloadText) => session.sendLatestData(peer, channel, payloadText),
+  		latestDataStats: (peer, channel) => session.latestDataStats(peer, channel)
+  	};
+  	return Object.freeze(capability);
   }
   //#endregion
   //#region src/sync-protocol.ts
@@ -1278,11 +1567,14 @@
   var networkMessageHatOpcode = `${extensionConfig.id}_whenReceiveNetworkMessage`;
   var networkMessageThreadContextKey = "__turbowarpWebRtcNetworkMessage";
   var WebRtcManualPairingExtension = class {
-  	constructor(session = new ManualPeerSession(), sync) {
+  	constructor(session = new ManualPeerSession({ latestDataEnabled: defaultFeatureFlags.latestDataChannels }), sync) {
   		this.session = session;
   		this.sync = sync ?? new SyncService(session);
+  		this.runtimeCapability = createRuntimeCapability(session);
   		this.session.setMessageHandler((message) => this.startNetworkMessageHats(message));
   		this.session.setInternalHandler((message) => this.sync.handleEnvelope(message));
+  		const runtime = Scratch.vm?.runtime;
+  		if (runtime) runtime[runtimeCapabilityKey] = this.runtimeCapability;
   	}
   	getInfo() {
   		return {
@@ -1312,6 +1604,36 @@
   	}
   	sendEvent(args) {
   		this.session.sendEvent(Scratch.Cast.toString(args.PEER), Scratch.Cast.toString(args.TYPE), Scratch.Cast.toString(args.PAYLOAD), Scratch.Cast.toString(args.CHANNEL));
+  	}
+  	setLatestDataEnabled(args) {
+  		this.session.setLatestDataEnabled(Scratch.Cast.toBoolean(args.ENABLED));
+  	}
+  	configureLatestDataChannel(args) {
+  		this.session.configureLatestDataChannel(this.peer(args.PEER), Scratch.Cast.toString(args.CHANNEL), Scratch.Cast.toNumber(args.HIGH_WATER_MARK));
+  	}
+  	sendLatestData(args) {
+  		this.session.sendLatestData(this.peer(args.PEER), Scratch.Cast.toString(args.CHANNEL), Scratch.Cast.toString(args.PAYLOAD));
+  	}
+  	latestDataBufferedAmount(args) {
+  		return this.latestDataStats(args).bufferedAmount;
+  	}
+  	latestDataSentCount(args) {
+  		return this.latestDataStats(args).sentCount;
+  	}
+  	latestDataDroppedCount(args) {
+  		return this.latestDataStats(args).droppedCount;
+  	}
+  	latestDataChannelState(args) {
+  		return this.latestDataStats(args).state;
+  	}
+  	latestDataDropPolicy() {
+  		return "drop-newest";
+  	}
+  	runtimeCapabilityVersion() {
+  		return 2;
+  	}
+  	requireRuntimeCapabilityVersion(args) {
+  		this.runtimeCapability.requireVersion(Scratch.Cast.toNumber(args.VERSION));
   	}
   	broadcastNetworkMessage(args) {
   		this.session.sendEvent(Scratch.Cast.toString(args.PEER), Scratch.Cast.toString(args.MESSAGE), Scratch.Cast.toString(args.PAYLOAD), Scratch.Cast.toString(args.CHANNEL));
@@ -1405,11 +1727,19 @@
   	clearFrameSyncReport() {
   		this.sync.clearReport();
   	}
+  	dispose() {
+  		this.session.closeAll();
+  		const runtime = Scratch.vm?.runtime;
+  		if (runtime?.["kubohiroyaWebRtcCapability"] === this.runtimeCapability) delete runtime[runtimeCapabilityKey];
+  	}
   	peer(value) {
   		return Scratch.Cast.toString(value).trim() || "peer";
   	}
   	camera(value) {
   		return Scratch.Cast.toString(value).trim() || "camera";
+  	}
+  	latestDataStats(args) {
+  		return this.session.latestDataStats(this.peer(args.PEER), Scratch.Cast.toString(args.CHANNEL));
   	}
   	startNetworkMessageHats(message) {
   		this.latestNetworkMessage = message;
