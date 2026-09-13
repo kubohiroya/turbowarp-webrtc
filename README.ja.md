@@ -60,6 +60,16 @@ hat配下では次のreporterで受信内容を読めます。
 
 `broadcast ... and wait` 相当のブロックはまだありません。リモート側のscript完了を待つにはACK/完了通知プロトコルが必要なため、通常のnetwork broadcastとは別機能として扱います。
 
+## Opt-in latest-data channel
+
+latest-data channelは、古い値を再送する価値がないpose frameなどの送信向けです。既定では無効であり、既存のordered/reliableな `tm-events` control channelの挙動は変更しません。
+
+pairing前に両方のpeerで `set latest-data channels enabled [true]` を実行します。offererはofferを作る前に、`configure latest-data channel [pose] high-water mark [262144] bytes for peer [PEER]` でchannelを設定します。offerには `ordered: false`、`maxRetransmits: 0` の `tm-latest:<name>` DataChannelが含まれます。answererはlatest-dataを有効にしている場合だけ受理します。
+
+`send latest data` はnetworkを待ちません。`bufferedAmount` が設定したhigh-water markを超えている場合は、新しい値をdropする固定契約（`drop-newest`）でdrop countを増やします。診断にはstate、buffered byte、sent count、dropped countのreporterを使います。機能を無効にするとlatest-data channelだけを直ちに閉じ、control channelは継続します。再び有効にする場合はre-pairしてください。
+
+unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapability` を利用できます。現在の `version` は `1` です。consumerは利用前に `requireVersion(1)` を呼び、非対応versionなら明示的なerrorを受け取ります。このcapabilityはblockと同じopt-in、設定、送信、統計APIを提供し、このextensionのdispose時に削除されます。
+
 ## Frame sync measurement
 
 同じ被写体を撮る複数台のPCは、同じ瞬間にフレームを記録し終えるわけではありません。これらのblockはその差を計測し、複数PCで撮ったデータを1本の時間軸に載せられるようにします。
@@ -224,6 +234,112 @@ Sends a JSON event envelope to one peer, or to all peers when PEER is *.
 | `PAYLOAD` | String, default: `{}` |
 | `CHANNEL` | String, default: `default` |
 | `PEER` | String, default: `*` |
+
+### `set latest-data channels enabled [ENABLED]`
+
+Opts in or out of unreliable latest-data channels. The default is disabled.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `setLatestDataEnabled` |
+| `ENABLED` | Boolean, default: `false` |
+
+### `configure latest-data channel [CHANNEL] high-water mark [HIGH_WATER_MARK] bytes for peer [PEER]`
+
+Configures a named latest-data channel before creating an offer.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `configureLatestDataChannel` |
+| `CHANNEL` | String, default: `pose` |
+| `HIGH_WATER_MARK` | Number, default: `262144` |
+| `PEER` | String, default: `peer-a` |
+
+### `send latest data [PAYLOAD] channel [CHANNEL] to peer [PEER]`
+
+Sends without waiting, or drops the new value when bufferedAmount exceeds the high-water mark.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `sendLatestData` |
+| `PAYLOAD` | String, default: `{}` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data buffered bytes for channel [CHANNEL] peer [PEER]`
+
+Returns the browser DataChannel bufferedAmount for a named latest-data channel.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataBufferedAmount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data sent count for channel [CHANNEL] peer [PEER]`
+
+Returns the number of values handed to the named latest-data channel.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataSentCount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data dropped count for channel [CHANNEL] peer [PEER]`
+
+Returns the number of new values dropped by backpressure.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataDroppedCount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data state for channel [CHANNEL] peer [PEER]`
+
+Returns disabled, not-configured, connecting, open, closing, or closed.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataChannelState` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data drop policy`
+
+Returns the fixed backpressure policy, drop-newest.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataDropPolicy` |
+
+### `WebRTC runtime capability version`
+
+Returns the version of the runtime API for composite extensions.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `runtimeCapabilityVersion` |
+
+### `require WebRTC runtime capability version [VERSION]`
+
+Throws an explicit error when the requested runtime API version is unsupported.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `requireRuntimeCapabilityVersion` |
+| `VERSION` | Number, default: `1` |
 
 ### `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]`
 

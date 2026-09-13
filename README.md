@@ -60,6 +60,16 @@ Hat scripts can read the received message with these reporters:
 
 There is no `broadcast ... and wait` equivalent yet. Waiting for remote scripts to finish requires an ACK/completion protocol, so it is treated as a separate feature from regular network broadcast delivery.
 
+## Opt-in latest-data channels
+
+Latest-data channels are intended for values such as pose frames where a stale frame is not worth retransmitting. They are disabled by default and do not change the existing ordered, reliable `tm-events` control channel.
+
+Both peers must run `set latest-data channels enabled [true]` before pairing. Before the offerer creates its offer, configure each channel with `configure latest-data channel [pose] high-water mark [262144] bytes for peer [PEER]`. The offer then negotiates a `tm-latest:<name>` DataChannel with `ordered: false` and `maxRetransmits: 0`. The answerer accepts it only when latest-data is enabled.
+
+`send latest data` never waits for the network. When `bufferedAmount` is greater than the configured high-water mark, the new value is dropped (`drop-newest`) and the drop counter increases. Use the state, buffered-byte, sent-count, and dropped-count reporters for diagnostics. Disabling the feature immediately closes latest-data channels while leaving the control channel available; re-pair to enable them again.
+
+Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCapability`. Its current `version` is `1`; consumers must call `requireVersion(1)` before use. Unsupported versions throw an explicit error. The capability provides the same opt-in, configuration, send, and statistics operations as the blocks and is removed when this extension is disposed.
+
 ## Frame sync measurement
 
 Computers that film the same subject do not finish recording a frame at the same moment. These blocks measure that difference so that data captured on several computers can be placed on one timeline.
@@ -224,6 +234,112 @@ Sends a JSON event envelope to one peer, or to all peers when PEER is *.
 | `PAYLOAD` | String, default: `{}` |
 | `CHANNEL` | String, default: `default` |
 | `PEER` | String, default: `*` |
+
+### `set latest-data channels enabled [ENABLED]`
+
+Opts in or out of unreliable latest-data channels. The default is disabled.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `setLatestDataEnabled` |
+| `ENABLED` | Boolean, default: `false` |
+
+### `configure latest-data channel [CHANNEL] high-water mark [HIGH_WATER_MARK] bytes for peer [PEER]`
+
+Configures a named latest-data channel before creating an offer.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `configureLatestDataChannel` |
+| `CHANNEL` | String, default: `pose` |
+| `HIGH_WATER_MARK` | Number, default: `262144` |
+| `PEER` | String, default: `peer-a` |
+
+### `send latest data [PAYLOAD] channel [CHANNEL] to peer [PEER]`
+
+Sends without waiting, or drops the new value when bufferedAmount exceeds the high-water mark.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `sendLatestData` |
+| `PAYLOAD` | String, default: `{}` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data buffered bytes for channel [CHANNEL] peer [PEER]`
+
+Returns the browser DataChannel bufferedAmount for a named latest-data channel.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataBufferedAmount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data sent count for channel [CHANNEL] peer [PEER]`
+
+Returns the number of values handed to the named latest-data channel.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataSentCount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data dropped count for channel [CHANNEL] peer [PEER]`
+
+Returns the number of new values dropped by backpressure.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataDroppedCount` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data state for channel [CHANNEL] peer [PEER]`
+
+Returns disabled, not-configured, connecting, open, closing, or closed.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataChannelState` |
+| `CHANNEL` | String, default: `pose` |
+| `PEER` | String, default: `peer-a` |
+
+### `latest-data drop policy`
+
+Returns the fixed backpressure policy, drop-newest.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `latestDataDropPolicy` |
+
+### `WebRTC runtime capability version`
+
+Returns the version of the runtime API for composite extensions.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `runtimeCapabilityVersion` |
+
+### `require WebRTC runtime capability version [VERSION]`
+
+Throws an explicit error when the requested runtime API version is unsupported.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `requireRuntimeCapabilityVersion` |
+| `VERSION` | Number, default: `1` |
 
 ### `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]`
 

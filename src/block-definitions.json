@@ -7,7 +7,7 @@
       "text": "set ICE mode [MODE]",
       "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.",
       "arguments": {
-        "MODE": {"type": "STRING", "defaultValue": "lan"}
+        "MODE": { "type": "STRING", "defaultValue": "lan" }
       }
     },
     {
@@ -16,7 +16,7 @@
       "text": "create offer code for peer [PEER]",
       "description": "Creates a manual pairing offer code for the named peer.",
       "arguments": {
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -25,7 +25,7 @@
       "text": "offer code for peer [PEER]",
       "description": "Returns the latest offer code generated for the named peer.",
       "arguments": {
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -34,8 +34,8 @@
       "text": "accept offer code [CODE] as peer [PEER]",
       "description": "Accepts a peer's offer code and creates an answer code.",
       "arguments": {
-        "CODE": {"type": "STRING", "defaultValue": "offer-code"},
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "CODE": { "type": "STRING", "defaultValue": "offer-code" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -44,7 +44,7 @@
       "text": "answer code for peer [PEER]",
       "description": "Returns the latest answer code generated for the named peer.",
       "arguments": {
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -53,8 +53,8 @@
       "text": "accept answer code [CODE] for peer [PEER]",
       "description": "Completes pairing by accepting a peer's answer code.",
       "arguments": {
-        "CODE": {"type": "STRING", "defaultValue": "answer-code"},
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "CODE": { "type": "STRING", "defaultValue": "answer-code" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -63,10 +63,104 @@
       "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
       "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.",
       "arguments": {
-        "TYPE": {"type": "STRING", "defaultValue": "door-open"},
-        "PAYLOAD": {"type": "STRING", "defaultValue": "{}"},
-        "CHANNEL": {"type": "STRING", "defaultValue": "default"},
-        "PEER": {"type": "STRING", "defaultValue": "*"}
+        "TYPE": { "type": "STRING", "defaultValue": "door-open" },
+        "PAYLOAD": { "type": "STRING", "defaultValue": "{}" },
+        "CHANNEL": { "type": "STRING", "defaultValue": "default" },
+        "PEER": { "type": "STRING", "defaultValue": "*" }
+      }
+    },
+    {
+      "opcode": "setLatestDataEnabled",
+      "blockType": "COMMAND",
+      "text": "set latest-data channels enabled [ENABLED]",
+      "description": "Opts in or out of unreliable latest-data channels. The default is disabled.",
+      "arguments": {
+        "ENABLED": { "type": "BOOLEAN", "defaultValue": false }
+      }
+    },
+    {
+      "opcode": "configureLatestDataChannel",
+      "blockType": "COMMAND",
+      "text": "configure latest-data channel [CHANNEL] high-water mark [HIGH_WATER_MARK] bytes for peer [PEER]",
+      "description": "Configures a named latest-data channel before creating an offer.",
+      "arguments": {
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "HIGH_WATER_MARK": { "type": "NUMBER", "defaultValue": 262144 },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "sendLatestData",
+      "blockType": "COMMAND",
+      "text": "send latest data [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "description": "Sends without waiting, or drops the new value when bufferedAmount exceeds the high-water mark.",
+      "arguments": {
+        "PAYLOAD": { "type": "STRING", "defaultValue": "{}" },
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "latestDataBufferedAmount",
+      "blockType": "REPORTER",
+      "text": "latest-data buffered bytes for channel [CHANNEL] peer [PEER]",
+      "description": "Returns the browser DataChannel bufferedAmount for a named latest-data channel.",
+      "arguments": {
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "latestDataSentCount",
+      "blockType": "REPORTER",
+      "text": "latest-data sent count for channel [CHANNEL] peer [PEER]",
+      "description": "Returns the number of values handed to the named latest-data channel.",
+      "arguments": {
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "latestDataDroppedCount",
+      "blockType": "REPORTER",
+      "text": "latest-data dropped count for channel [CHANNEL] peer [PEER]",
+      "description": "Returns the number of new values dropped by backpressure.",
+      "arguments": {
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "latestDataChannelState",
+      "blockType": "REPORTER",
+      "text": "latest-data state for channel [CHANNEL] peer [PEER]",
+      "description": "Returns disabled, not-configured, connecting, open, closing, or closed.",
+      "arguments": {
+        "CHANNEL": { "type": "STRING", "defaultValue": "pose" },
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
+      }
+    },
+    {
+      "opcode": "latestDataDropPolicy",
+      "blockType": "REPORTER",
+      "text": "latest-data drop policy",
+      "description": "Returns the fixed backpressure policy, drop-newest.",
+      "arguments": {}
+    },
+    {
+      "opcode": "runtimeCapabilityVersion",
+      "blockType": "REPORTER",
+      "text": "WebRTC runtime capability version",
+      "description": "Returns the version of the runtime API for composite extensions.",
+      "arguments": {}
+    },
+    {
+      "opcode": "requireRuntimeCapabilityVersion",
+      "blockType": "COMMAND",
+      "text": "require WebRTC runtime capability version [VERSION]",
+      "description": "Throws an explicit error when the requested runtime API version is unsupported.",
+      "arguments": {
+        "VERSION": { "type": "NUMBER", "defaultValue": 1 }
       }
     },
     {
@@ -75,10 +169,10 @@
       "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
       "description": "Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.",
       "arguments": {
-        "MESSAGE": {"type": "STRING", "defaultValue": "door-open"},
-        "PAYLOAD": {"type": "STRING", "defaultValue": "{}"},
-        "CHANNEL": {"type": "STRING", "defaultValue": "default"},
-        "PEER": {"type": "STRING", "defaultValue": "*"}
+        "MESSAGE": { "type": "STRING", "defaultValue": "door-open" },
+        "PAYLOAD": { "type": "STRING", "defaultValue": "{}" },
+        "CHANNEL": { "type": "STRING", "defaultValue": "default" },
+        "PEER": { "type": "STRING", "defaultValue": "*" }
       }
     },
     {
@@ -164,7 +258,7 @@
       "text": "connection state of peer [PEER]",
       "description": "Returns the WebRTC connection state for the named peer.",
       "arguments": {
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {
@@ -180,7 +274,7 @@
       "text": "close peer [PEER]",
       "description": "Closes and removes a peer connection.",
       "arguments": {
-        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+        "PEER": { "type": "STRING", "defaultValue": "peer-a" }
       }
     },
     {

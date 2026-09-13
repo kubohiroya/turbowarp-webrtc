@@ -31,6 +31,7 @@ interface ScratchApi {
   translate: ScratchTranslate;
   vm?: {
     runtime?: {
+      [key: string]: unknown;
       startHats(opcode: string, fields?: Record<string, string>, target?: unknown): TurboWarpThread[];
     };
   };
