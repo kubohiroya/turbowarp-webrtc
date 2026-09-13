@@ -359,7 +359,7 @@ describe('WebRtcManualPairingExtension', () => {
     expect(extension.latestDataDroppedCount({PEER: 'peer-a', CHANNEL: 'pose'})).toBe(2);
     expect(extension.latestDataChannelState({PEER: 'peer-a', CHANNEL: 'pose'})).toBe('open');
     expect(extension.latestDataDropPolicy()).toBe('drop-newest');
-    expect(extension.runtimeCapabilityVersion()).toBe(1);
+    expect(extension.runtimeCapabilityVersion()).toBe(2);
     expect(session.calls).toEqual([
       'setLatestDataEnabled:true',
       'configureLatestDataChannel:peer-a:pose:1024',
@@ -367,21 +367,26 @@ describe('WebRtcManualPairingExtension', () => {
     ]);
   });
 
-  it('publishes a versioned runtime capability and cleans it up on dispose', () => {
+  it('publishes a backward-compatible v2 runtime capability and cleans it up on dispose', async () => {
     const session = new FakeSession();
     const extension = new WebRtcManualPairingExtension(session);
     const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
     const capability = runtime[runtimeCapabilityKey] as {
       version: number;
       requireVersion(version: number): unknown;
+      createOffer(peer: string): Promise<string>;
+      getOffer(peer: string): string;
     };
 
-    expect(capability.version).toBe(1);
+    expect(capability.version).toBe(2);
     expect(capability.requireVersion(1)).toBe(capability);
-    expect(() => capability.requireVersion(2)).toThrow(
+    expect(capability.requireVersion(2)).toBe(capability);
+    await expect(capability.createOffer('peer-capability')).resolves.toBe('offer:peer-capability');
+    expect(capability.getOffer('peer-capability')).toBe('offer:peer-capability');
+    expect(() => capability.requireVersion(3)).toThrow(
       'Unsupported WebRTC runtime capability version'
     );
-    expect(() => extension.requireRuntimeCapabilityVersion({VERSION: 2})).toThrow(
+    expect(() => extension.requireRuntimeCapabilityVersion({VERSION: 3})).toThrow(
       'Unsupported WebRTC runtime capability version'
     );
 

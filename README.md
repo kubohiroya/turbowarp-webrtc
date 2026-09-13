@@ -68,7 +68,7 @@ Both peers must run `set latest-data channels enabled [true]` before pairing. Be
 
 `send latest data` never waits for the network. When `bufferedAmount` is greater than the configured high-water mark, the new value is dropped (`drop-newest`) and the drop counter increases. Use the state, buffered-byte, sent-count, and dropped-count reporters for diagnostics. Disabling the feature immediately closes latest-data channels while leaving the control channel available; re-pair to enable them again.
 
-Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCapability`. Its current `version` is `1`; consumers must call `requireVersion(1)` before use. Unsupported versions throw an explicit error. The capability provides the same opt-in, configuration, send, and statistics operations as the blocks and is removed when this extension is disposed.
+Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCapability`. Its current `version` is `2`. Version 1 consumers remain compatible through `requireVersion(1)`. Version 2 consumers call `requireVersion(2)` and can additionally use `createOffer(peer)` and `getOffer(peer)` to create and render manual-pairing offers without duplicating transport state. Other versions throw an explicit error. The capability also provides the block-equivalent latest-data opt-in, configuration, send, and statistics operations and is removed when this extension is disposed.
 
 ## Frame sync measurement
 
@@ -339,7 +339,7 @@ Throws an explicit error when the requested runtime API version is unsupported.
 |---|---|
 | Type | Command |
 | Opcode | `requireRuntimeCapabilityVersion` |
-| `VERSION` | Number, default: `1` |
+| `VERSION` | Number, default: `2` |
 
 ### `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]`
 

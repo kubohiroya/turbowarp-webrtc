@@ -7,7 +7,7 @@ import {
   createRuntimeCapability,
   runtimeCapabilityKey,
   runtimeCapabilityVersion,
-  type WebRtcRuntimeCapabilityV1
+  type WebRtcRuntimeCapabilityV2
 } from './runtime-capability.js';
 import {SyncService} from './sync-service.js';
 
@@ -36,7 +36,7 @@ const networkMessageThreadContextKey = '__turbowarpWebRtcNetworkMessage';
 export class WebRtcManualPairingExtension implements TurboWarpExtension {
   private readonly session: PeerSessionPort;
   private readonly sync: SyncService;
-  private readonly runtimeCapability: WebRtcRuntimeCapabilityV1;
+  private readonly runtimeCapability: WebRtcRuntimeCapabilityV2;
   private latestNetworkMessage: ReceivedEnvelope | undefined;
 
   public constructor(

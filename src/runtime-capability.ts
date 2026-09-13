@@ -4,11 +4,11 @@ import type {
   PeerSessionPort
 } from './manual-peer-session.js';
 
-export const runtimeCapabilityVersion = 1 as const;
+export const runtimeCapabilityVersion = 2 as const;
 export const runtimeCapabilityKey = 'kubohiroyaWebRtcCapability';
 
 export interface WebRtcRuntimeCapabilityV1 {
-  readonly version: typeof runtimeCapabilityVersion;
+  readonly version: number;
   requireVersion(version: number): WebRtcRuntimeCapabilityV1;
   setLatestDataEnabled(enabled: boolean): void;
   configureLatestDataChannel(peer: string, channel: string, highWaterMark: number): void;
@@ -16,17 +16,26 @@ export interface WebRtcRuntimeCapabilityV1 {
   latestDataStats(peer: string, channel: string): LatestDataChannelStats;
 }
 
-export function createRuntimeCapability(session: PeerSessionPort): WebRtcRuntimeCapabilityV1 {
-  const capability: WebRtcRuntimeCapabilityV1 = {
+export interface WebRtcRuntimeCapabilityV2 extends WebRtcRuntimeCapabilityV1 {
+  readonly version: typeof runtimeCapabilityVersion;
+  requireVersion(version: number): WebRtcRuntimeCapabilityV2;
+  createOffer(peer: string): Promise<string>;
+  getOffer(peer: string): string;
+}
+
+export function createRuntimeCapability(session: PeerSessionPort): WebRtcRuntimeCapabilityV2 {
+  const capability: WebRtcRuntimeCapabilityV2 = {
     version: runtimeCapabilityVersion,
     requireVersion(version) {
-      if (version !== runtimeCapabilityVersion) {
+      if (version !== 1 && version !== runtimeCapabilityVersion) {
         throw new Error(
-          `Unsupported WebRTC runtime capability version: ${version}; expected ${runtimeCapabilityVersion}.`
+          `Unsupported WebRTC runtime capability version: ${version}; supported versions are 1 and ${runtimeCapabilityVersion}.`
         );
       }
       return capability;
     },
+    createOffer: (peer) => session.createOffer(peer),
+    getOffer: (peer) => session.getOffer(peer),
     setLatestDataEnabled: (enabled) => session.setLatestDataEnabled(enabled),
     configureLatestDataChannel: (peer, channel, highWaterMark) =>
       session.configureLatestDataChannel(peer, channel, highWaterMark),

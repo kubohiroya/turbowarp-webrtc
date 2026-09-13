@@ -68,7 +68,7 @@ pairing前に両方のpeerで `set latest-data channels enabled [true]` を実�
 
 `send latest data` はnetworkを待ちません。`bufferedAmount` が設定したhigh-water markを超えている場合は、新しい値をdropする固定契約（`drop-newest`）でdrop countを増やします。診断にはstate、buffered byte、sent count、dropped countのreporterを使います。機能を無効にするとlatest-data channelだけを直ちに閉じ、control channelは継続します。再び有効にする場合はre-pairしてください。
 
-unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapability` を利用できます。現在の `version` は `1` です。consumerは利用前に `requireVersion(1)` を呼び、非対応versionなら明示的なerrorを受け取ります。このcapabilityはblockと同じopt-in、設定、送信、統計APIを提供し、このextensionのdispose時に削除されます。
+unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapability` を利用できます。現在の `version` は `2` です。version 1 consumerは `requireVersion(1)` により互換性を維持します。version 2 consumerは `requireVersion(2)` を呼び、追加の `createOffer(peer)` と `getOffer(peer)` を使ってtransport stateを重複管理せずにmanual-pairing offerを作成・表示できます。それ以外のversionは明示的なerrorになります。このcapabilityはblockと同じlatest-dataのopt-in、設定、送信、統計APIも提供し、このextensionのdispose時に削除されます。
 
 ## Frame sync measurement
 
@@ -339,7 +339,7 @@ Throws an explicit error when the requested runtime API version is unsupported.
 |---|---|
 | Type | Command |
 | Opcode | `requireRuntimeCapabilityVersion` |
-| `VERSION` | Number, default: `1` |
+| `VERSION` | Number, default: `2` |
 
 ### `broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]`
 

@@ -160,7 +160,7 @@
       "text": "require WebRTC runtime capability version [VERSION]",
       "description": "Throws an explicit error when the requested runtime API version is unsupported.",
       "arguments": {
-        "VERSION": { "type": "NUMBER", "defaultValue": 1 }
+        "VERSION": { "type": "NUMBER", "defaultValue": 2 }
       }
     },
     {

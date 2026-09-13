@@ -251,7 +251,7 @@
   			"description": "Throws an explicit error when the requested runtime API version is unsupported.",
   			"arguments": { "VERSION": {
   				"type": "NUMBER",
-  				"defaultValue": 1
+  				"defaultValue": 2
   			} }
   		},
   		{
@@ -962,11 +962,13 @@
   var runtimeCapabilityKey = "kubohiroyaWebRtcCapability";
   function createRuntimeCapability(session) {
   	const capability = {
-  		version: 1,
+  		version: 2,
   		requireVersion(version) {
-  			if (version !== 1) throw new Error(`Unsupported WebRTC runtime capability version: ${version}; expected 1.`);
+  			if (version !== 1 && version !== 2) throw new Error(`Unsupported WebRTC runtime capability version: ${version}; supported versions are 1 and 2.`);
   			return capability;
   		},
+  		createOffer: (peer) => session.createOffer(peer),
+  		getOffer: (peer) => session.getOffer(peer),
   		setLatestDataEnabled: (enabled) => session.setLatestDataEnabled(enabled),
   		configureLatestDataChannel: (peer, channel, highWaterMark) => session.configureLatestDataChannel(peer, channel, highWaterMark),
   		sendLatestData: (peer, channel, payloadText) => session.sendLatestData(peer, channel, payloadText),
@@ -1628,7 +1630,7 @@
   		return "drop-newest";
   	}
   	runtimeCapabilityVersion() {
-  		return 1;
+  		return 2;
   	}
   	requireRuntimeCapabilityVersion(args) {
   		this.runtimeCapability.requireVersion(Scratch.Cast.toNumber(args.VERSION));
