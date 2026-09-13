@@ -53,9 +53,54 @@
       ]
     },
     {
+      "opcode": "clearFrameSyncReport",
+      "blockType": "COMMAND",
+      "arguments": []
+    },
+    {
+      "opcode": "clearFrameSyncSamples",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "clearMessages",
       "blockType": "COMMAND",
       "arguments": []
+    },
+    {
+      "opcode": "clockOffset",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "clockRoundTrip",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "clockUncertainty",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
     },
     {
       "opcode": "closePeer",
@@ -93,6 +138,78 @@
       ]
     },
     {
+      "opcode": "frameLatency",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CAPTURE",
+          "type": "NUMBER"
+        },
+        {
+          "id": "PATTERN",
+          "type": "NUMBER"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        },
+        {
+          "id": "WRAP",
+          "type": "NUMBER"
+        }
+      ]
+    },
+    {
+      "opcode": "frameSyncCameras",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "frameSyncLatencyOfCamera",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "frameSyncOffsetOfCamera",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "frameSyncReport",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "frameSyncSampleCount",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "frameSyncSummary",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "getAnswer",
       "blockType": "REPORTER",
       "arguments": [
@@ -119,6 +236,11 @@
     },
     {
       "opcode": "lastMessage",
+      "blockType": "REPORTER",
+      "arguments": []
+    },
+    {
+      "opcode": "localTime",
       "blockType": "REPORTER",
       "arguments": []
     },
@@ -153,6 +275,42 @@
       "arguments": []
     },
     {
+      "opcode": "peerTime",
+      "blockType": "REPORTER",
+      "arguments": [
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "recordFrameSyncSample",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        },
+        {
+          "id": "CAPTURE",
+          "type": "NUMBER"
+        },
+        {
+          "id": "PATTERN",
+          "type": "NUMBER"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        },
+        {
+          "id": "WRAP",
+          "type": "NUMBER"
+        }
+      ]
+    },
+    {
       "opcode": "sendEvent",
       "blockType": "COMMAND",
       "arguments": [
@@ -175,11 +333,35 @@
       ]
     },
     {
+      "opcode": "sendFrameSyncReport",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "CAMERA",
+          "type": "STRING"
+        },
+        {
+          "id": "PEER",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
       "opcode": "setIceMode",
       "blockType": "COMMAND",
       "arguments": [
         {
           "id": "MODE",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "opcode": "syncClock",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "PEER",
           "type": "STRING"
         }
       ]

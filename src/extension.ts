@@ -2,9 +2,10 @@ import {extensionConfig} from './config.js';
 import definitions from './block-definitions.json';
 import {ManualPeerSession, type PeerSessionPort} from './manual-peer-session.js';
 import type {ReceivedEnvelope} from './protocol.js';
+import {SyncService} from './sync-service.js';
 
 type BlockTypeName = 'COMMAND' | 'REPORTER' | 'BOOLEAN' | 'EVENT';
-type ArgumentTypeName = 'STRING';
+type ArgumentTypeName = 'STRING' | 'NUMBER';
 
 interface DefinitionArgument {
   type: ArgumentTypeName;
@@ -27,11 +28,14 @@ const networkMessageThreadContextKey = '__turbowarpWebRtcNetworkMessage';
 
 export class WebRtcManualPairingExtension implements TurboWarpExtension {
   private readonly session: PeerSessionPort;
+  private readonly sync: SyncService;
   private latestNetworkMessage: ReceivedEnvelope | undefined;
 
-  public constructor(session: PeerSessionPort = new ManualPeerSession()) {
+  public constructor(session: PeerSessionPort = new ManualPeerSession(), sync?: SyncService) {
     this.session = session;
+    this.sync = sync ?? new SyncService(session);
     this.session.setMessageHandler((message) => this.startNetworkMessageHats(message));
+    this.session.setInternalHandler((message) => this.sync.handleEnvelope(message));
   }
 
   public getInfo(): Record<string, unknown> {
@@ -139,8 +143,103 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     this.session.closePeer(this.peer(args.PEER));
   }
 
+  public async syncClock(args: {PEER: unknown}): Promise<void> {
+    await this.sync.syncClock(this.peer(args.PEER));
+  }
+
+  public clockOffset(args: {PEER: unknown}): number {
+    return this.sync.clockOffsetMs(this.peer(args.PEER));
+  }
+
+  public clockRoundTrip(args: {PEER: unknown}): number {
+    return this.sync.clockRoundTripMs(this.peer(args.PEER));
+  }
+
+  public clockUncertainty(args: {PEER: unknown}): number {
+    return this.sync.clockUncertaintyMs(this.peer(args.PEER));
+  }
+
+  public peerTime(args: {PEER: unknown}): number {
+    return this.sync.peerTimeMs(this.peer(args.PEER));
+  }
+
+  public localTime(): number {
+    return this.sync.localTimeMs();
+  }
+
+  public frameLatency(args: {
+    CAPTURE: unknown;
+    PATTERN: unknown;
+    WRAP: unknown;
+    PEER: unknown;
+  }): number {
+    return this.sync.frameLatency(
+      Scratch.Cast.toNumber(args.CAPTURE),
+      Scratch.Cast.toNumber(args.PATTERN),
+      Scratch.Cast.toNumber(args.WRAP),
+      this.peer(args.PEER)
+    );
+  }
+
+  public recordFrameSyncSample(args: {
+    CAMERA: unknown;
+    CAPTURE: unknown;
+    PATTERN: unknown;
+    WRAP: unknown;
+    PEER: unknown;
+  }): void {
+    this.sync.recordSample(
+      this.camera(args.CAMERA),
+      Scratch.Cast.toNumber(args.CAPTURE),
+      Scratch.Cast.toNumber(args.PATTERN),
+      Scratch.Cast.toNumber(args.WRAP),
+      this.peer(args.PEER)
+    );
+  }
+
+  public clearFrameSyncSamples(args: {CAMERA: unknown}): void {
+    this.sync.clearSamples(this.camera(args.CAMERA));
+  }
+
+  public frameSyncSampleCount(args: {CAMERA: unknown}): number {
+    return this.sync.sampleCount(this.camera(args.CAMERA));
+  }
+
+  public frameSyncSummary(args: {CAMERA: unknown}): string {
+    const report = this.sync.localReport(this.camera(args.CAMERA));
+    return report ? JSON.stringify(report) : '';
+  }
+
+  public sendFrameSyncReport(args: {CAMERA: unknown; PEER: unknown}): void {
+    this.sync.sendReport(this.camera(args.CAMERA), this.peer(args.PEER));
+  }
+
+  public frameSyncReport(): string {
+    return this.sync.reportOverview();
+  }
+
+  public frameSyncCameras(): string {
+    return this.sync.reportCameras();
+  }
+
+  public frameSyncLatencyOfCamera(args: {CAMERA: unknown}): number {
+    return this.sync.reportLatencyMs(this.camera(args.CAMERA));
+  }
+
+  public frameSyncOffsetOfCamera(args: {CAMERA: unknown}): number {
+    return this.sync.reportOffsetMs(this.camera(args.CAMERA));
+  }
+
+  public clearFrameSyncReport(): void {
+    this.sync.clearReport();
+  }
+
   private peer(value: unknown): string {
     return Scratch.Cast.toString(value).trim() || 'peer';
+  }
+
+  private camera(value: unknown): string {
+    return Scratch.Cast.toString(value).trim() || 'camera';
   }
 
   private startNetworkMessageHats(message: ReceivedEnvelope): void {

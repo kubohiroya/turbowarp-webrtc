@@ -1,7 +1,19 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {WebRtcManualPairingExtension} from '../src/extension.js';
-import type {IceMode, MessageHandler} from '../src/manual-peer-session.js';
+import type {
+  IceMode,
+  InternalMessageHandler,
+  MessageHandler
+} from '../src/manual-peer-session.js';
 import {protocolVersion, type ReceivedEnvelope} from '../src/protocol.js';
+import {SyncService} from '../src/sync-service.js';
+import {
+  clockProbeSchema,
+  createClockPing,
+  frameSyncReportSchema,
+  frameSyncReportVersion,
+  syncChannel
+} from '../src/sync-protocol.js';
 
 type TestThread = Record<string, unknown>;
 type StartHatsMock = ReturnType<
@@ -14,6 +26,7 @@ class FakeSession {
   public answers = new Map<string, string>();
   public messages: string[] = ['{"type":"door-open"}'];
   private messageHandler: MessageHandler | undefined;
+  private internalHandler: InternalMessageHandler | undefined;
 
   public setIceMode(mode: string): IceMode {
     this.calls.push(`setIceMode:${mode}`);
@@ -50,6 +63,27 @@ class FakeSession {
 
   public setMessageHandler(handler: MessageHandler | undefined): void {
     this.messageHandler = handler;
+  }
+
+  public setInternalHandler(handler: InternalMessageHandler | undefined): void {
+    this.internalHandler = handler;
+  }
+
+  public deliverInternal(message: Partial<ReceivedEnvelope> = {}): boolean {
+    return (
+      this.internalHandler?.({
+        version: protocolVersion,
+        id: 'internal-1',
+        seq: 1,
+        from: 'remote-id',
+        peer: 'peer-a',
+        channel: 'sync',
+        type: 'twmp/clock-probe',
+        payload: {},
+        timestamp: Date.now(),
+        ...message
+      }) ?? false
+    );
   }
 
   public receive(message: Partial<ReceivedEnvelope> = {}): void {
@@ -103,9 +137,10 @@ class FakeSession {
 beforeEach(() => {
   vi.stubGlobal('Scratch', {
     BlockType: {COMMAND: 'command', REPORTER: 'reporter', BOOLEAN: 'boolean', EVENT: 'event'},
-    ArgumentType: {STRING: 'string'},
+    ArgumentType: {STRING: 'string', NUMBER: 'number'},
     Cast: {
-      toString: (value: unknown) => String(value)
+      toString: (value: unknown) => String(value),
+      toNumber: (value: unknown) => Number(value)
     },
     translate: (message: string | {default: string}) => (typeof message === 'string' ? message : message.default),
     vm: {
@@ -159,7 +194,24 @@ describe('WebRtcManualPairingExtension', () => {
       'clearMessages',
       'connectionState',
       'connectedPeers',
-      'closePeer'
+      'closePeer',
+      'syncClock',
+      'clockOffset',
+      'clockRoundTrip',
+      'clockUncertainty',
+      'peerTime',
+      'localTime',
+      'frameLatency',
+      'recordFrameSyncSample',
+      'clearFrameSyncSamples',
+      'frameSyncSampleCount',
+      'frameSyncSummary',
+      'sendFrameSyncReport',
+      'frameSyncReport',
+      'frameSyncCameras',
+      'frameSyncLatencyOfCamera',
+      'frameSyncOffsetOfCamera',
+      'clearFrameSyncReport'
     ]);
   });
 
@@ -253,5 +305,113 @@ describe('WebRtcManualPairingExtension', () => {
       '{"pin":2}'
     );
     expect(extension.networkMessagePayload()).toBe('{"pin":2}');
+  });
+
+  it('measures frame sync latency and reports it to the aggregating peer', () => {
+    const session = new FakeSession();
+    const transport = {sendEvent: vi.fn()};
+    const sync = new SyncService(transport, {nowUs: () => 2_000_000});
+    const extension = new WebRtcManualPairingExtension(session, sync);
+
+    expect(extension.localTime()).toBe(2000);
+    expect(
+      extension.frameLatency({CAPTURE: '10', PATTERN: '4060', WRAP: '4096', PEER: 'host'})
+    ).toBe(46);
+
+    for (const latency of [40, 44, 48]) {
+      extension.recordFrameSyncSample({
+        CAMERA: 'camera-1',
+        CAPTURE: String(1000 + latency),
+        PATTERN: '1000',
+        WRAP: '0',
+        PEER: 'host'
+      });
+    }
+
+    expect(extension.frameSyncSampleCount({CAMERA: 'camera-1'})).toBe(3);
+    expect(JSON.parse(extension.frameSyncSummary({CAMERA: 'camera-1'}))).toMatchObject({
+      schema: frameSyncReportSchema,
+      cameraId: 'camera-1',
+      referencePeer: 'host',
+      latencyMs: {count: 3, median: 44}
+    });
+
+    extension.sendFrameSyncReport({CAMERA: 'camera-1', PEER: 'fusion'});
+    expect(transport.sendEvent).toHaveBeenCalledWith(
+      'fusion',
+      frameSyncReportSchema,
+      expect.stringContaining('"cameraId":"camera-1"'),
+      syncChannel
+    );
+
+    extension.clearFrameSyncSamples({CAMERA: 'camera-1'});
+    expect(extension.frameSyncSampleCount({CAMERA: 'camera-1'})).toBe(0);
+    expect(extension.frameSyncSummary({CAMERA: 'camera-1'})).toBe('');
+  });
+
+  it('keeps sync traffic out of the receive queue and aggregates reports', () => {
+    const session = new FakeSession();
+    const transport = {sendEvent: vi.fn()};
+    const extension = new WebRtcManualPairingExtension(
+      session,
+      new SyncService(transport, {nowUs: () => 3_000_000})
+    );
+
+    expect(
+      session.deliverInternal({
+        channel: syncChannel,
+        type: clockProbeSchema,
+        payload: createClockPing(1, 1_000_000)
+      })
+    ).toBe(true);
+    expect(transport.sendEvent).toHaveBeenCalledWith(
+      'peer-a',
+      clockProbeSchema,
+      expect.stringContaining('"kind":"pong"'),
+      syncChannel
+    );
+    expect(session.deliverInternal({channel: 'default', type: 'door-open'})).toBe(false);
+
+    for (const [cameraId, median] of [
+      ['camera-1', 40],
+      ['camera-2', 60]
+    ] as const) {
+      session.deliverInternal({
+        peer: `peer-${cameraId}`,
+        channel: syncChannel,
+        type: frameSyncReportSchema,
+        payload: {
+          schema: frameSyncReportSchema,
+          version: frameSyncReportVersion,
+          cameraId,
+          referencePeer: 'host',
+          measuredAtUs: 1_000,
+          latencyMs: {
+            count: 4,
+            min: median - 2,
+            p10: median - 2,
+            median,
+            p90: median + 2,
+            max: median + 2,
+            mean: median,
+            mad: 1,
+            stddev: 1
+          },
+          clock: null
+        }
+      });
+    }
+
+    expect(JSON.parse(extension.frameSyncCameras())).toEqual(['camera-1', 'camera-2']);
+    expect(extension.frameSyncLatencyOfCamera({CAMERA: 'camera-1'})).toBe(40);
+    expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-1'})).toBe(-10);
+    expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-2'})).toBe(10);
+    expect(JSON.parse(extension.frameSyncReport())).toMatchObject({referenceLatencyMs: 50});
+
+    extension.clearFrameSyncReport();
+    expect(JSON.parse(extension.frameSyncReport())).toEqual({
+      referenceLatencyMs: 0,
+      cameras: []
+    });
   });
 });

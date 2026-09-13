@@ -182,6 +182,159 @@
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
+    },
+    {
+      "opcode": "syncClock",
+      "blockType": "COMMAND",
+      "text": "sync clock with peer [PEER]",
+      "description": "Runs a clock probe exchange with the peer and stores the resulting clock offset.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "clockOffset",
+      "blockType": "REPORTER",
+      "text": "clock offset to peer [PEER]",
+      "description": "Returns the milliseconds to add to a local timestamp to express it in the peer's clock.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "clockRoundTrip",
+      "blockType": "REPORTER",
+      "text": "clock round trip to peer [PEER]",
+      "description": "Returns the shortest round trip observed while probing the peer, in milliseconds.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "clockUncertainty",
+      "blockType": "REPORTER",
+      "text": "clock uncertainty to peer [PEER]",
+      "description": "Returns the clock offset uncertainty for the peer, which is half the shortest round trip.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "peerTime",
+      "blockType": "REPORTER",
+      "text": "time in clock of peer [PEER]",
+      "description": "Returns the current local time expressed in the peer's clock, in milliseconds.",
+      "arguments": {
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "localTime",
+      "blockType": "REPORTER",
+      "text": "local time",
+      "description": "Returns the local high-resolution clock in milliseconds.",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameLatency",
+      "blockType": "REPORTER",
+      "text": "frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]",
+      "description": "Returns how many milliseconds after the displayed pattern time the local frame was captured. CAPTURE is a local timestamp, PATTERN is the decoded display time in the peer's clock, and WRAP is the pattern repeat period in milliseconds, or 0 when the pattern never repeats.",
+      "arguments": {
+        "CAPTURE": {"type": "NUMBER", "defaultValue": "0"},
+        "PATTERN": {"type": "NUMBER", "defaultValue": "0"},
+        "WRAP": {"type": "NUMBER", "defaultValue": "4096"},
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "recordFrameSyncSample",
+      "blockType": "COMMAND",
+      "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]",
+      "description": "Converts one pattern observation into a latency sample and stores it for the camera slot.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"},
+        "CAPTURE": {"type": "NUMBER", "defaultValue": "0"},
+        "PATTERN": {"type": "NUMBER", "defaultValue": "0"},
+        "WRAP": {"type": "NUMBER", "defaultValue": "4096"},
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "clearFrameSyncSamples",
+      "blockType": "COMMAND",
+      "text": "clear frame sync samples for camera [CAMERA]",
+      "description": "Clears the latency samples stored for the camera slot.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
+      }
+    },
+    {
+      "opcode": "frameSyncSampleCount",
+      "blockType": "REPORTER",
+      "text": "frame sync sample count for camera [CAMERA]",
+      "description": "Returns how many latency samples are stored for the camera slot.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
+      }
+    },
+    {
+      "opcode": "frameSyncSummary",
+      "blockType": "REPORTER",
+      "text": "frame sync summary for camera [CAMERA]",
+      "description": "Returns the local latency summary for the camera slot as a JSON report.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
+      }
+    },
+    {
+      "opcode": "sendFrameSyncReport",
+      "blockType": "COMMAND",
+      "text": "send frame sync report for camera [CAMERA] to peer [PEER]",
+      "description": "Sends the camera slot's latency summary to the peer on the internal sync channel.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"},
+        "PEER": {"type": "STRING", "defaultValue": "peer-a"}
+      }
+    },
+    {
+      "opcode": "frameSyncReport",
+      "blockType": "REPORTER",
+      "text": "frame sync report",
+      "description": "Returns every received frame sync report together with per-camera offsets as JSON.",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameSyncCameras",
+      "blockType": "REPORTER",
+      "text": "frame sync cameras",
+      "description": "Returns a JSON array of the camera slots that have reported.",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameSyncLatencyOfCamera",
+      "blockType": "REPORTER",
+      "text": "frame sync latency of camera [CAMERA]",
+      "description": "Returns the reported median capture latency of the camera slot in milliseconds.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
+      }
+    },
+    {
+      "opcode": "frameSyncOffsetOfCamera",
+      "blockType": "REPORTER",
+      "text": "frame sync offset of camera [CAMERA]",
+      "description": "Returns how many milliseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.",
+      "arguments": {
+        "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
+      }
+    },
+    {
+      "opcode": "clearFrameSyncReport",
+      "blockType": "COMMAND",
+      "text": "clear frame sync report",
+      "description": "Clears every received frame sync report.",
+      "arguments": {}
     }
   ],
   "menus": {

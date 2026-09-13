@@ -13,6 +13,8 @@ TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM Ka
 - JSON event envelopeと受信キューを持つ。
 - 名前付きpeerを複数扱える。
 - ネットワーク越しのmessage受信でTurboWarpのhat blockを起動できる。
+- DataChannel上でpeer間の時計を合わせるclock probe blockを持つ。
+- フレーム同期のlatency計測とカメラ別集計ができる。
 
 ## Requirements and safety
 
@@ -57,6 +59,63 @@ hat配下では次のreporterで受信内容を読めます。
 - `network message channel`: envelopeのchannelを返す。
 
 `broadcast ... and wait` 相当のブロックはまだありません。リモート側のscript完了を待つにはACK/完了通知プロトコルが必要なため、通常のnetwork broadcastとは別機能として扱います。
+
+## Frame sync measurement
+
+同じ被写体を撮る複数台のPCは、同じ瞬間にフレームを記録し終えるわけではありません。これらのblockはその差を計測し、複数PCで撮ったデータを1本の時間軸に載せられるようにします。
+
+計測には「表示された時刻そのものを符号化した画面」が必要です。1台のPCがそのパターンを表示し、プロジェクタで各カメラの視野に投影し、カメラ側の各PCが自分のフレームからパターンを復号します。パターンの表示と復号はアプリケーション側の関心事で、[multiview-pose](https://github.com/kubohiroya/multiview-pose/issues/8) のアプリで実装します。この拡張は、その観測値を比較可能な数値に変えるためのclock probeとレポート経路を提供します。
+
+### 1. 時計を合わせる
+
+`sync clock with peer [PEER]` は、既存のDataChannel上で `twmp/clock-probe` version 1 のやり取りを行います。1回のやり取りで、送信時刻・相手の受信時刻・相手の返信時刻・返信の到着時刻の4点を記録します。offsetは往復時間が短い上位1/4の平均を採ります。往復が短いものほどキュー遅延の混入が少ないためです。
+
+- `clock offset to peer [PEER]`: ローカル時刻をpeerの時計で表すために足すミリ秒。
+- `clock round trip to peer [PEER]`: 観測された最短の往復時間。
+- `clock uncertainty to peer [PEER]`: その半分。offsetの残差の上限にあたります。
+- `time in clock of peer [PEER]` と `local time`: それぞれの時計を直接読みます。
+
+probeのtrafficは内部channel `sync` を通り、受信キューには入りません。高頻度でprobeしてもアプリケーションのmessageを押し出すことはありません。
+
+### 2. サンプルを集める
+
+復号できたフレームごとに、`record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]` が1件のlatencyサンプルに変換します。
+
+```text
+latency = (CAPTURE + clock offset to PEER) - PATTERN
+```
+
+`CAPTURE` は記録し終えたフレームのローカル時刻、`PATTERN` はそのフレームから復号した表示時刻、`WRAP` は表示時刻が一周する周期です。12bitのミリ秒パターンなら4096、一周しないパターンなら0を指定します。真のlatencyがwrap周期未満であるかぎり、巻き戻りは正しく解決されます。`frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]` は同じ値を保存せずに返すので、実時間表示に使えます。
+
+### 3. 送信して集計する
+
+`send frame sync report for camera [CAMERA] to peer [PEER]` は、蓄積したサンプルを要約し、`twmp/frame-sync-report` version 1 のpayloadとして送信します。
+
+```json
+{
+  "schema": "twmp/frame-sync-report",
+  "version": 1,
+  "cameraId": "camera-1",
+  "referencePeer": "host",
+  "measuredAtUs": 1787616000000000,
+  "latencyMs": {
+    "count": 240,
+    "min": 38.2,
+    "p10": 41.0,
+    "median": 47.5,
+    "p90": 62.4,
+    "max": 71.9,
+    "mean": 49.1,
+    "mad": 5.2,
+    "stddev": 7.8
+  },
+  "clock": {"offsetMs": -12.4, "rttMs": 3.1, "uncertaintyMs": 1.55, "samples": 24}
+}
+```
+
+集計側のPCでは、`frame sync report` が受信済みの全レポートとカメラごとのoffsetを返し、`frame sync latency of camera [CAMERA]` がそのカメラのlatency中央値を返し、`frame sync offset of camera [CAMERA]` が基準カメラよりどれだけ遅れてフレームを記録し終えるかを返します。基準はカメラごとの中央値の中央値です。各カメラのフレーム時刻からそのoffsetを引けば、全カメラが1本の時間軸に揃います。
+
+latencyは平均だけでなく中央値・MAD・10/90パーセンタイルで要約します。カメラのパイプラインは非対称に遅延・欠落するためです。プロジェクタや表示パイプラインのように全カメラ共通の遅延は、絶対値としてのlatencyには残りますが、offsetでは相殺されます。
 
 ## Runtime behavior
 
@@ -294,6 +353,180 @@ Closes and removes a peer connection.
 | Type | Command |
 | Opcode | `closePeer` |
 | `PEER` | String, default: `peer-a` |
+
+### `sync clock with peer [PEER]`
+
+Runs a clock probe exchange with the peer and stores the resulting clock offset.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `syncClock` |
+| `PEER` | String, default: `peer-a` |
+
+### `clock offset to peer [PEER]`
+
+Returns the milliseconds to add to a local timestamp to express it in the peer's clock.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `clockOffset` |
+| `PEER` | String, default: `peer-a` |
+
+### `clock round trip to peer [PEER]`
+
+Returns the shortest round trip observed while probing the peer, in milliseconds.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `clockRoundTrip` |
+| `PEER` | String, default: `peer-a` |
+
+### `clock uncertainty to peer [PEER]`
+
+Returns the clock offset uncertainty for the peer, which is half the shortest round trip.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `clockUncertainty` |
+| `PEER` | String, default: `peer-a` |
+
+### `time in clock of peer [PEER]`
+
+Returns the current local time expressed in the peer's clock, in milliseconds.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `peerTime` |
+| `PEER` | String, default: `peer-a` |
+
+### `local time`
+
+Returns the local high-resolution clock in milliseconds.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `localTime` |
+
+### `frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]`
+
+Returns how many milliseconds after the displayed pattern time the local frame was captured. CAPTURE is a local timestamp, PATTERN is the decoded display time in the peer's clock, and WRAP is the pattern repeat period in milliseconds, or 0 when the pattern never repeats.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameLatency` |
+| `CAPTURE` | Number, default: `0` |
+| `PATTERN` | Number, default: `0` |
+| `WRAP` | Number, default: `4096` |
+| `PEER` | String, default: `peer-a` |
+
+### `record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]`
+
+Converts one pattern observation into a latency sample and stores it for the camera slot.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `recordFrameSyncSample` |
+| `CAMERA` | String, default: `camera-1` |
+| `CAPTURE` | Number, default: `0` |
+| `PATTERN` | Number, default: `0` |
+| `WRAP` | Number, default: `4096` |
+| `PEER` | String, default: `peer-a` |
+
+### `clear frame sync samples for camera [CAMERA]`
+
+Clears the latency samples stored for the camera slot.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `clearFrameSyncSamples` |
+| `CAMERA` | String, default: `camera-1` |
+
+### `frame sync sample count for camera [CAMERA]`
+
+Returns how many latency samples are stored for the camera slot.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncSampleCount` |
+| `CAMERA` | String, default: `camera-1` |
+
+### `frame sync summary for camera [CAMERA]`
+
+Returns the local latency summary for the camera slot as a JSON report.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncSummary` |
+| `CAMERA` | String, default: `camera-1` |
+
+### `send frame sync report for camera [CAMERA] to peer [PEER]`
+
+Sends the camera slot's latency summary to the peer on the internal sync channel.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `sendFrameSyncReport` |
+| `CAMERA` | String, default: `camera-1` |
+| `PEER` | String, default: `peer-a` |
+
+### `frame sync report`
+
+Returns every received frame sync report together with per-camera offsets as JSON.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncReport` |
+
+### `frame sync cameras`
+
+Returns a JSON array of the camera slots that have reported.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncCameras` |
+
+### `frame sync latency of camera [CAMERA]`
+
+Returns the reported median capture latency of the camera slot in milliseconds.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncLatencyOfCamera` |
+| `CAMERA` | String, default: `camera-1` |
+
+### `frame sync offset of camera [CAMERA]`
+
+Returns how many milliseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `frameSyncOffsetOfCamera` |
+| `CAMERA` | String, default: `camera-1` |
+
+### `clear frame sync report`
+
+Clears every received frame sync report.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `clearFrameSyncReport` |
 
 <!-- END GENERATED BLOCKS -->
 
