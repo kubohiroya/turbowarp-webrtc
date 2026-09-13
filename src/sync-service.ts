@@ -49,16 +49,30 @@ export class SyncService {
     });
   }
 
-  /** Handles sync traffic. Returns true when the envelope was consumed. */
+  /**
+   * Handles sync traffic. Returns true when the envelope was consumed.
+   *
+   * Only the two known payloads are claimed. Anything else, even on the
+   * internal channel, is left for the application so that a stray envelope
+   * surfaces in the receive queue instead of disappearing. Dispatch failures
+   * are contained here: an envelope this service claimed must never fall
+   * through and start application hat blocks.
+   */
   public handleEnvelope(message: ReceivedEnvelope): boolean {
     if (message.channel !== syncChannel) return false;
-    if (message.type === clockProbeSchema) {
-      return this.clock.handleMessage(message.peer, message.type, message.payload);
+    if (message.type !== clockProbeSchema && message.type !== frameSyncReportSchema) {
+      return false;
     }
-    if (message.type === frameSyncReportSchema) {
-      const report = parseFrameSyncReport(message.payload);
-      if (report) this.registry.accept(report, message.peer, this.nowUs());
-      return true;
+    try {
+      if (message.type === clockProbeSchema) {
+        this.clock.handleMessage(message.peer, message.type, message.payload);
+      } else {
+        const report = parseFrameSyncReport(message.payload);
+        if (report) this.registry.accept(report, message.peer, this.nowUs());
+      }
+    } catch {
+      // A peer that closed mid-probe must not push transport traffic into the
+      // application's receive queue.
     }
     return true;
   }
@@ -84,6 +98,7 @@ export class SyncService {
   }
 
   public peerTimeUs(peer: string): number {
+    this.requireEstimate(peer);
     return this.clock.toPeerTimeUs(peer, this.localTimeUs());
   }
 
@@ -92,6 +107,7 @@ export class SyncService {
    * computer finished recording the frame, expressed in the peer's clock.
    */
   public frameLatency(captureUs: number, patternUs: number, wrapUs: number, peer: string): number {
+    this.requireEstimate(peer);
     return frameLatencyUs(this.clock.toPeerTimeUs(peer, captureUs), patternUs, wrapUs);
   }
 
@@ -157,6 +173,19 @@ export class SyncService {
 
   public clearReport(): void {
     this.registry.clear();
+  }
+
+  /**
+   * Refuses to express a local timestamp in a clock that was never probed.
+   *
+   * Without an estimate the offset would silently be zero, which compares two
+   * unrelated wall clocks and, once folded into the pattern wrap period, yields
+   * a plausible looking latency that is pure noise.
+   */
+  private requireEstimate(peer: string): void {
+    if (!this.clock.hasEstimate(peer)) {
+      throw new Error(`Sync the clock with peer ${peer} before measuring frame latency.`);
+    }
   }
 
   private send(peer: string, type: string, payload: unknown): void {

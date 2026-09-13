@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {SyncService, type SyncTransport} from '../src/sync-service.js';
 import {protocolVersion, type ReceivedEnvelope} from '../src/protocol.js';
-import {frameSyncReportSchema, syncChannel} from '../src/sync-protocol.js';
+import {clockProbeSchema, frameSyncReportSchema, syncChannel} from '../src/sync-protocol.js';
 
 interface SentEvent {
   peer: string;
@@ -147,10 +147,48 @@ describe('SyncService', () => {
     const {fusion} = createPair();
 
     expect(fusion.handleEnvelope(envelope('camera-pc', 'door-open', 'default', {}))).toBe(false);
-    expect(fusion.handleEnvelope(envelope('camera-pc', 'unknown', syncChannel, {}))).toBe(true);
+    // A stray envelope on the internal channel stays visible to the project.
+    expect(fusion.handleEnvelope(envelope('camera-pc', 'unknown', syncChannel, {}))).toBe(false);
     expect(fusion.handleEnvelope(envelope('camera-pc', frameSyncReportSchema, syncChannel, {}))).toBe(
       true
     );
     expect(JSON.parse(fusion.reportCameras())).toEqual([]);
+  });
+
+  it('refuses to measure against a clock it never probed', () => {
+    const {camera} = createPair();
+
+    expect(() => camera.frameLatency(1_000_000, 1_000_000, 0, 'fusion-pc')).toThrow(
+      'Sync the clock with peer fusion-pc'
+    );
+    expect(() =>
+      camera.recordSample('camera-1', 1_000_000, 1_000_000, 0, 'fusion-pc')
+    ).toThrow('Sync the clock with peer fusion-pc');
+    expect(() => camera.peerTimeUs('fusion-pc')).toThrow('Sync the clock');
+    expect(camera.sampleCount('camera-1')).toBe(0);
+  });
+
+  it('keeps a failed dispatch from leaking transport traffic to the project', () => {
+    const service = new SyncService(
+      {
+        sendEvent: () => {
+          throw new Error('Peer camera-pc is not ready for sending.');
+        }
+      },
+      {nowUs: () => 1_000_000}
+    );
+
+    // The pong cannot be sent, but the ping must still count as consumed.
+    expect(
+      service.handleEnvelope(
+        envelope('camera-pc', clockProbeSchema, syncChannel, {
+          schema: clockProbeSchema,
+          version: 1,
+          kind: 'ping',
+          sequence: 1,
+          t0Us: 900_000
+        })
+      )
+    ).toBe(true);
   });
 });

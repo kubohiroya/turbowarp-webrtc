@@ -36,6 +36,13 @@ describe('frameLatencyUs', () => {
   it('keeps the raw difference when the pattern never repeats', () => {
     expect(frameLatencyUs(10_000, 4_060_000, 0)).toBe(-4_050_000);
   });
+
+  it('keeps a slightly negative latency negative instead of wrapping it', () => {
+    // Subtracting an over-large frame age can push the difference below zero.
+    // Folding that to a positive residue would report a 4094 ms outlier.
+    expect(frameLatencyUs(998_000, 1_000_000, 4_096_000)).toBe(-2_000);
+    expect(frameLatencyUs(1_000_000, 1_000_000, 4_096_000)).toBe(0);
+  });
 });
 
 describe('summarizeLatencies', () => {

@@ -83,19 +83,22 @@ describe('ClockSync', () => {
     expect(clock.handleMessage('host', 'door-open', {})).toBe(false);
   });
 
-  it('rejects when the peer never answers', async () => {
+  it('gives up after a few silent probes instead of draining the budget', async () => {
+    const sent: number[] = [];
     const clock = new ClockSync({
       nowUs: localNowUs,
-      exchanges: 2,
+      exchanges: 24,
       intervalMs: 1,
       timeoutMs: 50,
-      send: () => undefined
+      send: () => sent.push(Date.now())
     });
 
     const pending = clock.syncWith('host');
-    const assertion = expect(pending).rejects.toThrow('did not answer');
-    await vi.advanceTimersByTimeAsync(500);
+    const assertion = expect(pending).rejects.toThrow('did not answer 3 clock probes');
+    await vi.advanceTimersByTimeAsync(5000);
     await assertion;
+    // A peer without clock probe support must not stall 24 timeouts long.
+    expect(sent).toHaveLength(3);
     expect(clock.hasEstimate('host')).toBe(false);
     expect(clock.offsetUsTo('host')).toBe(0);
   });

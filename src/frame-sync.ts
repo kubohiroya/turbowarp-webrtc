@@ -28,13 +28,20 @@ const defaultSampleLimit = 20000;
  * Converts one decoded pattern observation into a capture latency.
  *
  * `captureUs` must already be expressed in the clock that produced `patternUs`.
- * A positive `wrapUs` unwraps a pattern whose encoded time repeats, which keeps
- * the result correct as long as the true latency stays below the wrap period.
+ * A positive `wrapUs` unwraps a pattern whose encoded time repeats, resolving it
+ * to the half wrap period nearest zero rather than to the first positive
+ * residue. Folding to a positive residue would turn a latency that is slightly
+ * negative, which a clock offset error or an over-corrected frame age produces,
+ * into an outlier just under a full wrap period and wreck the mean, the
+ * percentiles and the spread of the summary. Keeping it negative leaves the
+ * mistake visible. The result is correct while the true latency stays within
+ * half the wrap period.
  */
 export function frameLatencyUs(captureUs: number, patternUs: number, wrapUs = 0): number {
   const latency = captureUs - patternUs;
   if (!(wrapUs > 0)) return latency;
-  return ((latency % wrapUs) + wrapUs) % wrapUs;
+  const half = wrapUs / 2;
+  return (((latency + half) % wrapUs) + wrapUs) % wrapUs - half;
 }
 
 export function summarizeLatencies(values: readonly number[]): LatencyStats | undefined {

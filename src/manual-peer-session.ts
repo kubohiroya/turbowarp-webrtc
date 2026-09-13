@@ -246,11 +246,14 @@ export class ManualPeerSession implements PeerSessionPort {
   }
 
   private consumeInternally(message: ReceivedEnvelope): boolean {
+    if (!this.internalHandler) return false;
     try {
-      return this.internalHandler?.(message) === true;
+      return this.internalHandler(message) === true;
     } catch {
-      // Transport-internal handlers must not stall message delivery.
-      return false;
+      // A handler only throws once it is already handling transport traffic, so
+      // the message is still consumed. Falling through would push internal
+      // traffic into the receive queue and start application hat blocks.
+      return true;
     }
   }
 

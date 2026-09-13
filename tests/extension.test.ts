@@ -159,6 +159,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** A service whose probes answer themselves, so blocks have a clock estimate. */
+function loopbackSync(nowUs: number): {
+  sync: SyncService;
+  transport: {sendEvent: ReturnType<typeof vi.fn>};
+} {
+  const transport = {
+    sendEvent: vi.fn((peer: string, type: string, payloadText: string, channel: string) => {
+      sync.handleEnvelope({
+        version: protocolVersion,
+        id: `loopback-${type}`,
+        seq: 1,
+        from: peer,
+        peer,
+        channel,
+        type,
+        payload: JSON.parse(payloadText),
+        timestamp: 0
+      });
+    })
+  };
+  const sync: SyncService = new SyncService(transport, {
+    nowUs: () => nowUs,
+    wait: () => Promise.resolve(),
+    exchanges: 1,
+    intervalMs: 0
+  });
+  return {sync, transport};
+}
+
 function startHatsMock(): StartHatsMock {
   return vi.mocked(Scratch.vm!.runtime!.startHats);
 }
@@ -307,11 +336,11 @@ describe('WebRtcManualPairingExtension', () => {
     expect(extension.networkMessagePayload()).toBe('{"pin":2}');
   });
 
-  it('measures frame sync latency and reports it to the aggregating peer', () => {
+  it('measures frame sync latency and reports it to the aggregating peer', async () => {
     const session = new FakeSession();
-    const transport = {sendEvent: vi.fn()};
-    const sync = new SyncService(transport, {nowUs: () => 2_000_000});
+    const {sync, transport} = loopbackSync(2_000_000);
     const extension = new WebRtcManualPairingExtension(session, sync);
+    await extension.syncClock({PEER: 'host'});
 
     expect(extension.localTime()).toBe(2_000_000);
     expect(
@@ -348,6 +377,16 @@ describe('WebRtcManualPairingExtension', () => {
       expect.stringContaining('"cameraId":"camera-1"'),
       syncChannel
     );
+
+    expect(() =>
+      extension.recordFrameSyncSample({
+        CAMERA: 'camera-1',
+        CAPTURE_US: '0',
+        PATTERN_US: '0',
+        WRAP_US: '0',
+        PEER: 'never-probed'
+      })
+    ).toThrow('Sync the clock with peer never-probed');
 
     extension.clearFrameSyncSamples({CAMERA: 'camera-1'});
     expect(extension.frameSyncSampleCount({CAMERA: 'camera-1'})).toBe(0);

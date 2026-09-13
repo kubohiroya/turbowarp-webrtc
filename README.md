@@ -77,7 +77,7 @@ Every timestamp and duration these blocks accept or return is in **microseconds*
 - `clock uncertainty to peer [PEER] us`: half that round trip, which bounds the residual offset error.
 - `time in clock of peer [PEER] us` and `local time us`: read either clock directly.
 
-Probe traffic uses the internal `sync` channel and never enters the receive queue, so probing at a high rate cannot evict application messages.
+Probe traffic uses the reserved internal channel `twmp/sync` and never enters the receive queue, so probing at a high rate cannot evict application messages. The transport claims only its own two payloads there, so nothing a project sends can disappear into it. A peer that does not answer gives up after three silent probes rather than draining the whole exchange budget.
 
 ### 2. Collect samples
 
@@ -87,7 +87,9 @@ For every decoded frame, `record frame sync sample for camera [CAMERA] capture [
 latency = (CAPTURE_US + clock offset to PEER) - PATTERN_US
 ```
 
-`CAPTURE_US` is the local timestamp of the recorded frame, `PATTERN_US` is the display time decoded out of that frame, and `WRAP_US` is the period after which the displayed time repeats: 4096000 for a 12 bit millisecond pattern, or 0 when the pattern never repeats. Wrapping is resolved correctly as long as the true latency stays below the wrap period. `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` returns the same number without storing it, which suits a live readout.
+`CAPTURE_US` is the local timestamp of the recorded frame, `PATTERN_US` is the display time decoded out of that frame, and `WRAP_US` is the period after which the displayed time repeats: 4096000 for a 12 bit millisecond pattern, or 0 when the pattern never repeats. Both blocks fail if the peer clock has not been probed, because an unprobed offset of zero would compare two unrelated wall clocks and still produce a plausible looking number.
+
+Wrapping resolves to the half wrap period nearest zero, so the measurement is correct while the true latency stays within half the wrap period, and a latency that comes out slightly negative stays negative instead of becoming an outlier just under a full period. A negative sample means the clock offset or a frame age correction was larger than the real latency; it is a signal to re-probe the clock, not a measurement to keep. `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` returns the same number without storing it, which suits a live readout.
 
 ### 3. Report and aggregate
 
@@ -398,7 +400,7 @@ Returns the clock offset uncertainty for the peer in microseconds, which is half
 
 ### `time in clock of peer [PEER] us`
 
-Returns the current local time expressed in the peer's clock, in microseconds.
+Returns the current local time expressed in the peer's clock, in microseconds. Errors when the peer clock has not been probed yet.
 
 | Property | Value |
 |---|---|
@@ -417,7 +419,7 @@ Returns the local high-resolution clock in microseconds.
 
 ### `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
-Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.
+Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats. Errors when the peer clock has not been probed yet. A negative result means the clock offset or the frame age correction exceeded the real latency.
 
 | Property | Value |
 |---|---|
@@ -430,7 +432,7 @@ Returns how many microseconds after the displayed pattern time the local frame w
 
 ### `record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
-Converts one pattern observation into a latency sample and stores it for the camera slot.
+Converts one pattern observation into a latency sample and stores it for the camera slot. Errors when the peer clock has not been probed yet.
 
 | Property | Value |
 |---|---|

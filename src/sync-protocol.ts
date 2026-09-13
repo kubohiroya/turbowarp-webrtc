@@ -8,8 +8,14 @@
  * promoted to a versioned schema without changing the runtime code.
  */
 
-/** Internal channel used for sync traffic so it never reaches the receive queue. */
-export const syncChannel = 'sync';
+/**
+ * Internal channel used for sync traffic so it never reaches the receive queue.
+ *
+ * The name is namespaced because everything the transport consumes on it is
+ * invisible to the project: a plain name like `sync` would silently swallow
+ * application messages that happened to pick the same channel.
+ */
+export const syncChannel = 'twmp/sync';
 
 export const clockProbeSchema = 'twmp/clock-probe';
 export const clockProbeVersion = 1;

@@ -223,7 +223,7 @@
       "opcode": "peerTime",
       "blockType": "REPORTER",
       "text": "time in clock of peer [PEER] us",
-      "description": "Returns the current local time expressed in the peer's clock, in microseconds.",
+      "description": "Returns the current local time expressed in the peer's clock, in microseconds. Errors when the peer clock has not been probed yet.",
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
@@ -239,7 +239,7 @@
       "opcode": "frameLatency",
       "blockType": "REPORTER",
       "text": "frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
-      "description": "Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.",
+      "description": "Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats. Errors when the peer clock has not been probed yet. A negative result means the clock offset or the frame age correction exceeded the real latency.",
       "arguments": {
         "CAPTURE_US": {"type": "NUMBER", "defaultValue": "0"},
         "PATTERN_US": {"type": "NUMBER", "defaultValue": "0"},
@@ -251,7 +251,7 @@
       "opcode": "recordFrameSyncSample",
       "blockType": "COMMAND",
       "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
-      "description": "Converts one pattern observation into a latency sample and stores it for the camera slot.",
+      "description": "Converts one pattern observation into a latency sample and stores it for the camera slot. Errors when the peer clock has not been probed yet.",
       "arguments": {
         "CAMERA": {"type": "STRING", "defaultValue": "camera-1"},
         "CAPTURE_US": {"type": "NUMBER", "defaultValue": "0"},

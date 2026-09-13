@@ -77,7 +77,7 @@ hat配下では次のreporterで受信内容を読めます。
 - `clock uncertainty to peer [PEER] us`: その半分。offsetの残差の上限にあたります。
 - `time in clock of peer [PEER] us` と `local time us`: それぞれの時計を直接読みます。
 
-probeのtrafficは内部channel `sync` を通り、受信キューには入りません。高頻度でprobeしてもアプリケーションのmessageを押し出すことはありません。
+probeのtrafficは予約済みの内部channel `twmp/sync` を通り、受信キューには入りません。高頻度でprobeしてもアプリケーションのmessageを押し出すことはありません。この内部channel上でもtransportが受け取るのは自分の2種類のpayloadだけなので、プロジェクトが送ったmessageが消えることはありません。応答しない相手には、全exchangeを消化せず3回の無応答で打ち切ります。
 
 ### 2. サンプルを集める
 
@@ -87,7 +87,9 @@ probeのtrafficは内部channel `sync` を通り、受信キューには入り�
 latency = (CAPTURE_US + clock offset to PEER) - PATTERN_US
 ```
 
-`CAPTURE_US` は記録し終えたフレームのローカル時刻、`PATTERN_US` はそのフレームから復号した表示時刻、`WRAP_US` は表示時刻が一周する周期です。12bitのミリ秒パターンなら4096000、一周しないパターンなら0を指定します。真のlatencyがwrap周期未満であるかぎり、巻き戻りは正しく解決されます。`frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` は同じ値を保存せずに返すので、実時間表示に使えます。
+`CAPTURE_US` は記録し終えたフレームのローカル時刻、`PATTERN_US` はそのフレームから復号した表示時刻、`WRAP_US` は表示時刻が一周する周期です。12bitのミリ秒パターンなら4096000、一周しないパターンなら0を指定します。どちらのblockも、相手の時計をprobeしていなければエラーになります。未probeのoffsetは0であり、無関係な2つの壁時計を比べたうえで「それらしい値」を返してしまうからです。
+
+巻き戻りは0に最も近い半周期へ解決します。真のlatencyがwrap周期の半分以内であるかぎり正しく、わずかに負になったlatencyは、ほぼ1周期分の外れ値になる代わりに負のまま残ります。負のサンプルは、clock offsetかframe ageの補正が実際のlatencyより大きかったという合図で、採用すべき測定値ではなく再probeの合図です。`frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` は同じ値を保存せずに返すので、実時間表示に使えます。
 
 ### 3. 送信して集計する
 
@@ -398,7 +400,7 @@ Returns the clock offset uncertainty for the peer in microseconds, which is half
 
 ### `time in clock of peer [PEER] us`
 
-Returns the current local time expressed in the peer's clock, in microseconds.
+Returns the current local time expressed in the peer's clock, in microseconds. Errors when the peer clock has not been probed yet.
 
 | Property | Value |
 |---|---|
@@ -417,7 +419,7 @@ Returns the local high-resolution clock in microseconds.
 
 ### `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
-Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.
+Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats. Errors when the peer clock has not been probed yet. A negative result means the clock offset or the frame age correction exceeded the real latency.
 
 | Property | Value |
 |---|---|
@@ -430,7 +432,7 @@ Returns how many microseconds after the displayed pattern time the local frame w
 
 ### `record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
-Converts one pattern observation into a latency sample and stores it for the camera slot.
+Converts one pattern observation into a latency sample and stores it for the camera slot. Errors when the peer clock has not been probed yet.
 
 | Property | Value |
 |---|---|

@@ -33,6 +33,12 @@ interface Exchange {
 const defaultExchanges = 24;
 const defaultIntervalMs = 20;
 const defaultTimeoutMs = 1000;
+/**
+ * A peer that answers at all answers the first probes. Giving up after a few
+ * silent ones keeps a peer without clock probe support, an older build for
+ * instance, from stalling the calling script for the whole exchange budget.
+ */
+const maxSilentExchanges = 3;
 
 /**
  * NTP-style clock offset estimation over an existing DataChannel.
@@ -66,13 +72,21 @@ export class ClockSync {
 
   public async syncWith(peer: string): Promise<ClockEstimate> {
     const samples: Exchange[] = [];
+    let silent = 0;
     for (let index = 0; index < this.exchanges; index += 1) {
       if (index > 0 && this.intervalMs > 0) await this.wait(this.intervalMs);
       const sample = await this.exchange(peer);
-      if (sample) samples.push(sample);
+      if (sample) {
+        samples.push(sample);
+        silent = 0;
+      } else if (++silent >= maxSilentExchanges) {
+        break;
+      }
     }
     if (samples.length === 0) {
-      throw new Error(`Peer ${peer} did not answer any clock probe.`);
+      throw new Error(
+        `Peer ${peer} did not answer ${silent} clock probes. It may be running a build without clock probe support.`
+      );
     }
     const estimate = summarizeExchanges(peer, samples, this.nowUs());
     this.estimates.set(peer, estimate);
