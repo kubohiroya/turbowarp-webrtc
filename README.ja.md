@@ -27,7 +27,7 @@ LAN modeはpublic STUN serverを使わず、同じ部屋・同一LAN内の配置
 ローカルビルドではpackageをinstallします。
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.2.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.3.0
 ```
 
 TurboWarpへ読み込む場合は生成済みのunsandboxed bundle `dist/turbowarp-webrtc.js` を使います。
