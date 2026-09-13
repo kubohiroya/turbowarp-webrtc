@@ -4,7 +4,7 @@ import {clockProbeSchema, createClockPing, parseClockProbe} from '../src/sync-pr
 
 const uplinkMs = 4;
 const downlinkMs = 6;
-const remoteOffsetMs = 1234.5;
+const remoteOffsetUs = 1_234_500;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -19,7 +19,7 @@ function localNowUs(): number {
 }
 
 function remoteNowUs(): number {
-  return Math.round(localNowUs() + remoteOffsetMs * 1000);
+  return localNowUs() + remoteOffsetUs;
 }
 
 describe('ClockSync', () => {
@@ -48,12 +48,12 @@ describe('ClockSync', () => {
     const estimate = await pending;
 
     // An asymmetric path biases the offset by half the path difference.
-    expect(estimate.offsetMs).toBeCloseTo(remoteOffsetMs + (uplinkMs - downlinkMs) / 2, 6);
-    expect(estimate.rttMs).toBeCloseTo(uplinkMs + downlinkMs, 6);
-    expect(estimate.uncertaintyMs).toBeCloseTo((uplinkMs + downlinkMs) / 2, 6);
+    expect(estimate.offsetUs).toBeCloseTo(remoteOffsetUs + ((uplinkMs - downlinkMs) * 1000) / 2, 6);
+    expect(estimate.rttUs).toBeCloseTo((uplinkMs + downlinkMs) * 1000, 6);
+    expect(estimate.uncertaintyUs).toBeCloseTo(((uplinkMs + downlinkMs) * 1000) / 2, 6);
     expect(estimate.samples).toBe(8);
     expect(local.hasEstimate('host')).toBe(true);
-    expect(local.toPeerTimeMs('host', 1000)).toBeCloseTo(1000 + estimate.offsetMs, 6);
+    expect(local.toPeerTimeUs('host', 1000)).toBeCloseTo(1000 + estimate.offsetUs, 6);
   });
 
   it('answers a ping with the four probe timestamps', () => {
@@ -97,6 +97,6 @@ describe('ClockSync', () => {
     await vi.advanceTimersByTimeAsync(500);
     await assertion;
     expect(clock.hasEstimate('host')).toBe(false);
-    expect(clock.offsetMsTo('host')).toBe(0);
+    expect(clock.offsetUsTo('host')).toBe(0);
   });
 });

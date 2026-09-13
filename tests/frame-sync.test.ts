@@ -3,7 +3,7 @@ import {
   FrameSyncRegistry,
   LatencySampleStore,
   createFrameSyncReport,
-  frameLatencyMs,
+  frameLatencyUs,
   percentile,
   summarizeLatencies
 } from '../src/frame-sync.js';
@@ -23,18 +23,18 @@ function statsWithMedian(median: number): LatencyStats {
   };
 }
 
-describe('frameLatencyMs', () => {
+describe('frameLatencyUs', () => {
   it('subtracts the pattern time from the capture time', () => {
-    expect(frameLatencyMs(1_000_120, 1_000_000, 0)).toBe(120);
+    expect(frameLatencyUs(1_000_120, 1_000_000, 0)).toBe(120);
   });
 
   it('unwraps a pattern that repeats', () => {
     // The pattern counter wrapped between display and capture: 4060 -> 4096 -> 10.
-    expect(frameLatencyMs(10, 4060, 4096)).toBe(46);
+    expect(frameLatencyUs(10_000, 4_060_000, 4_096_000)).toBe(46_000);
   });
 
   it('keeps the raw difference when the pattern never repeats', () => {
-    expect(frameLatencyMs(10, 4060, 0)).toBe(-4050);
+    expect(frameLatencyUs(10_000, 4_060_000, 0)).toBe(-4_050_000);
   });
 });
 
@@ -93,8 +93,8 @@ describe('FrameSyncRegistry', () => {
           cameraId,
           referencePeer: 'host',
           measuredAtUs: 1_000,
-          latencyMs: statsWithMedian(median),
-          clock: {offsetMs: 1, rttMs: 4, uncertaintyMs: 2, samples: 24}
+          latencyUs: statsWithMedian(median),
+          clock: {offsetUs: 1000, rttUs: 4000, uncertaintyUs: 2000, samples: 24}
         }),
         `peer-${cameraId}`,
         2_000
@@ -102,22 +102,22 @@ describe('FrameSyncRegistry', () => {
     }
 
     expect(registry.cameras()).toEqual(['camera-1', 'camera-2', 'camera-3']);
-    expect(registry.referenceLatencyMs()).toBe(50);
-    expect(registry.latencyMsOf('camera-1')).toBe(40);
-    expect(registry.offsetMsOf('camera-1')).toBe(-10);
-    expect(registry.offsetMsOf('camera-2')).toBe(10);
-    expect(registry.offsetMsOf('camera-3')).toBe(0);
+    expect(registry.referenceLatencyUs()).toBe(50);
+    expect(registry.latencyUsOf('camera-1')).toBe(40);
+    expect(registry.offsetUsOf('camera-1')).toBe(-10);
+    expect(registry.offsetUsOf('camera-2')).toBe(10);
+    expect(registry.offsetUsOf('camera-3')).toBe(0);
 
     const overview = registry.overview();
-    expect(overview.referenceLatencyMs).toBe(50);
-    expect(overview.cameras.map((camera) => camera.offsetMs)).toEqual([-10, 10, 0]);
+    expect(overview.referenceLatencyUs).toBe(50);
+    expect(overview.cameras.map((camera) => camera.offsetUs)).toEqual([-10, 10, 0]);
     expect(overview.cameras[0]).toMatchObject({peer: 'peer-camera-1', referencePeer: 'host'});
   });
 
   it('reports zero for cameras that never reported', () => {
     const registry = new FrameSyncRegistry();
-    expect(registry.latencyMsOf('camera-1')).toBe(0);
-    expect(registry.offsetMsOf('camera-1')).toBe(0);
-    expect(registry.overview()).toEqual({referenceLatencyMs: 0, cameras: []});
+    expect(registry.latencyUsOf('camera-1')).toBe(0);
+    expect(registry.offsetUsOf('camera-1')).toBe(0);
+    expect(registry.overview()).toEqual({referenceLatencyUs: 0, cameras: []});
   });
 });

@@ -12,7 +12,7 @@
     name: "WebRTC Manual Pairing"
   };
   const extensionName = "WebRTC Manual Pairing";
-  const blocks = [{ "opcode": "setIceMode", "blockType": "COMMAND", "text": "set ICE mode [MODE]", "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.", "arguments": { "MODE": { "type": "STRING", "defaultValue": "lan" } } }, { "opcode": "createOffer", "blockType": "COMMAND", "text": "create offer code for peer [PEER]", "description": "Creates a manual pairing offer code for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getOffer", "blockType": "REPORTER", "text": "offer code for peer [PEER]", "description": "Returns the latest offer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptOffer", "blockType": "COMMAND", "text": "accept offer code [CODE] as peer [PEER]", "description": "Accepts a peer's offer code and creates an answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "offer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getAnswer", "blockType": "REPORTER", "text": "answer code for peer [PEER]", "description": "Returns the latest answer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptAnswer", "blockType": "COMMAND", "text": "accept answer code [CODE] for peer [PEER]", "description": "Completes pairing by accepting a peer's answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "answer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "sendEvent", "blockType": "COMMAND", "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.", "arguments": { "TYPE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "broadcastNetworkMessage", "blockType": "COMMAND", "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.", "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "whenReceiveNetworkMessage", "blockType": "EVENT", "text": "when I receive network message [MESSAGE]", "description": "Starts scripts when a matching network broadcast message is received.", "isEdgeActivated": false, "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open", "menu": "networkMessages" } } }, { "opcode": "networkMessagePayload", "blockType": "REPORTER", "text": "network message payload", "description": "Returns the payload of the most recently received network broadcast message as JSON.", "arguments": {} }, { "opcode": "networkMessageSender", "blockType": "REPORTER", "text": "network message sender", "description": "Returns the sender ID of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "networkMessagePeer", "blockType": "REPORTER", "text": "network message peer", "description": "Returns the local peer name that received the most recent network broadcast message.", "arguments": {} }, { "opcode": "networkMessageChannel", "blockType": "REPORTER", "text": "network message channel", "description": "Returns the channel of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "hasMessages", "blockType": "BOOLEAN", "text": "has received messages?", "description": "Reports whether the receive queue contains at least one message.", "arguments": {} }, { "opcode": "messageCount", "blockType": "REPORTER", "text": "received message count", "description": "Returns the number of messages currently waiting in the receive queue.", "arguments": {} }, { "opcode": "nextMessage", "blockType": "REPORTER", "text": "next received message", "description": "Removes and returns the oldest received message as JSON.", "arguments": {} }, { "opcode": "lastMessage", "blockType": "REPORTER", "text": "last received message", "description": "Returns the most recent received message as JSON without removing it.", "arguments": {} }, { "opcode": "clearMessages", "blockType": "COMMAND", "text": "clear received messages", "description": "Clears the receive queue.", "arguments": {} }, { "opcode": "connectionState", "blockType": "REPORTER", "text": "connection state of peer [PEER]", "description": "Returns the WebRTC connection state for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "connectedPeers", "blockType": "REPORTER", "text": "connected peers", "description": "Returns a JSON array of connected peer names.", "arguments": {} }, { "opcode": "closePeer", "blockType": "COMMAND", "text": "close peer [PEER]", "description": "Closes and removes a peer connection.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "syncClock", "blockType": "COMMAND", "text": "sync clock with peer [PEER]", "description": "Runs a clock probe exchange with the peer and stores the resulting clock offset.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockOffset", "blockType": "REPORTER", "text": "clock offset to peer [PEER]", "description": "Returns the milliseconds to add to a local timestamp to express it in the peer's clock.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockRoundTrip", "blockType": "REPORTER", "text": "clock round trip to peer [PEER]", "description": "Returns the shortest round trip observed while probing the peer, in milliseconds.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockUncertainty", "blockType": "REPORTER", "text": "clock uncertainty to peer [PEER]", "description": "Returns the clock offset uncertainty for the peer, which is half the shortest round trip.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "peerTime", "blockType": "REPORTER", "text": "time in clock of peer [PEER]", "description": "Returns the current local time expressed in the peer's clock, in milliseconds.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "localTime", "blockType": "REPORTER", "text": "local time", "description": "Returns the local high-resolution clock in milliseconds.", "arguments": {} }, { "opcode": "frameLatency", "blockType": "REPORTER", "text": "frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]", "description": "Returns how many milliseconds after the displayed pattern time the local frame was captured. CAPTURE is a local timestamp, PATTERN is the decoded display time in the peer's clock, and WRAP is the pattern repeat period in milliseconds, or 0 when the pattern never repeats.", "arguments": { "CAPTURE": { "type": "NUMBER", "defaultValue": "0" }, "PATTERN": { "type": "NUMBER", "defaultValue": "0" }, "WRAP": { "type": "NUMBER", "defaultValue": "4096" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "recordFrameSyncSample", "blockType": "COMMAND", "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]", "description": "Converts one pattern observation into a latency sample and stores it for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" }, "CAPTURE": { "type": "NUMBER", "defaultValue": "0" }, "PATTERN": { "type": "NUMBER", "defaultValue": "0" }, "WRAP": { "type": "NUMBER", "defaultValue": "4096" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clearFrameSyncSamples", "blockType": "COMMAND", "text": "clear frame sync samples for camera [CAMERA]", "description": "Clears the latency samples stored for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncSampleCount", "blockType": "REPORTER", "text": "frame sync sample count for camera [CAMERA]", "description": "Returns how many latency samples are stored for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncSummary", "blockType": "REPORTER", "text": "frame sync summary for camera [CAMERA]", "description": "Returns the local latency summary for the camera slot as a JSON report.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "sendFrameSyncReport", "blockType": "COMMAND", "text": "send frame sync report for camera [CAMERA] to peer [PEER]", "description": "Sends the camera slot's latency summary to the peer on the internal sync channel.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "frameSyncReport", "blockType": "REPORTER", "text": "frame sync report", "description": "Returns every received frame sync report together with per-camera offsets as JSON.", "arguments": {} }, { "opcode": "frameSyncCameras", "blockType": "REPORTER", "text": "frame sync cameras", "description": "Returns a JSON array of the camera slots that have reported.", "arguments": {} }, { "opcode": "frameSyncLatencyOfCamera", "blockType": "REPORTER", "text": "frame sync latency of camera [CAMERA]", "description": "Returns the reported median capture latency of the camera slot in milliseconds.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncOffsetOfCamera", "blockType": "REPORTER", "text": "frame sync offset of camera [CAMERA]", "description": "Returns how many milliseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "clearFrameSyncReport", "blockType": "COMMAND", "text": "clear frame sync report", "description": "Clears every received frame sync report.", "arguments": {} }];
+  const blocks = [{ "opcode": "setIceMode", "blockType": "COMMAND", "text": "set ICE mode [MODE]", "description": "Sets whether new peer connections use LAN-only ICE or public STUN servers.", "arguments": { "MODE": { "type": "STRING", "defaultValue": "lan" } } }, { "opcode": "createOffer", "blockType": "COMMAND", "text": "create offer code for peer [PEER]", "description": "Creates a manual pairing offer code for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getOffer", "blockType": "REPORTER", "text": "offer code for peer [PEER]", "description": "Returns the latest offer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptOffer", "blockType": "COMMAND", "text": "accept offer code [CODE] as peer [PEER]", "description": "Accepts a peer's offer code and creates an answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "offer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "getAnswer", "blockType": "REPORTER", "text": "answer code for peer [PEER]", "description": "Returns the latest answer code generated for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "acceptAnswer", "blockType": "COMMAND", "text": "accept answer code [CODE] for peer [PEER]", "description": "Completes pairing by accepting a peer's answer code.", "arguments": { "CODE": { "type": "STRING", "defaultValue": "answer-code" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "sendEvent", "blockType": "COMMAND", "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a JSON event envelope to one peer, or to all peers when PEER is *.", "arguments": { "TYPE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "broadcastNetworkMessage", "blockType": "COMMAND", "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]", "description": "Sends a network broadcast message envelope to one peer, or to all peers when PEER is *.", "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open" }, "PAYLOAD": { "type": "STRING", "defaultValue": "{}" }, "CHANNEL": { "type": "STRING", "defaultValue": "default" }, "PEER": { "type": "STRING", "defaultValue": "*" } } }, { "opcode": "whenReceiveNetworkMessage", "blockType": "EVENT", "text": "when I receive network message [MESSAGE]", "description": "Starts scripts when a matching network broadcast message is received.", "isEdgeActivated": false, "arguments": { "MESSAGE": { "type": "STRING", "defaultValue": "door-open", "menu": "networkMessages" } } }, { "opcode": "networkMessagePayload", "blockType": "REPORTER", "text": "network message payload", "description": "Returns the payload of the most recently received network broadcast message as JSON.", "arguments": {} }, { "opcode": "networkMessageSender", "blockType": "REPORTER", "text": "network message sender", "description": "Returns the sender ID of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "networkMessagePeer", "blockType": "REPORTER", "text": "network message peer", "description": "Returns the local peer name that received the most recent network broadcast message.", "arguments": {} }, { "opcode": "networkMessageChannel", "blockType": "REPORTER", "text": "network message channel", "description": "Returns the channel of the most recently received network broadcast message.", "arguments": {} }, { "opcode": "hasMessages", "blockType": "BOOLEAN", "text": "has received messages?", "description": "Reports whether the receive queue contains at least one message.", "arguments": {} }, { "opcode": "messageCount", "blockType": "REPORTER", "text": "received message count", "description": "Returns the number of messages currently waiting in the receive queue.", "arguments": {} }, { "opcode": "nextMessage", "blockType": "REPORTER", "text": "next received message", "description": "Removes and returns the oldest received message as JSON.", "arguments": {} }, { "opcode": "lastMessage", "blockType": "REPORTER", "text": "last received message", "description": "Returns the most recent received message as JSON without removing it.", "arguments": {} }, { "opcode": "clearMessages", "blockType": "COMMAND", "text": "clear received messages", "description": "Clears the receive queue.", "arguments": {} }, { "opcode": "connectionState", "blockType": "REPORTER", "text": "connection state of peer [PEER]", "description": "Returns the WebRTC connection state for the named peer.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "connectedPeers", "blockType": "REPORTER", "text": "connected peers", "description": "Returns a JSON array of connected peer names.", "arguments": {} }, { "opcode": "closePeer", "blockType": "COMMAND", "text": "close peer [PEER]", "description": "Closes and removes a peer connection.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "syncClock", "blockType": "COMMAND", "text": "sync clock with peer [PEER]", "description": "Runs a clock probe exchange with the peer and stores the resulting clock offset.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockOffset", "blockType": "REPORTER", "text": "clock offset to peer [PEER] us", "description": "Returns the microseconds to add to a local timestamp to express it in the peer's clock.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockRoundTrip", "blockType": "REPORTER", "text": "clock round trip to peer [PEER] us", "description": "Returns the shortest round trip observed while probing the peer, in microseconds.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clockUncertainty", "blockType": "REPORTER", "text": "clock uncertainty to peer [PEER] us", "description": "Returns the clock offset uncertainty for the peer in microseconds, which is half the shortest round trip.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "peerTime", "blockType": "REPORTER", "text": "time in clock of peer [PEER] us", "description": "Returns the current local time expressed in the peer's clock, in microseconds.", "arguments": { "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "localTime", "blockType": "REPORTER", "text": "local time us", "description": "Returns the local high-resolution clock in microseconds.", "arguments": {} }, { "opcode": "frameLatency", "blockType": "REPORTER", "text": "frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]", "description": "Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.", "arguments": { "CAPTURE_US": { "type": "NUMBER", "defaultValue": "0" }, "PATTERN_US": { "type": "NUMBER", "defaultValue": "0" }, "WRAP_US": { "type": "NUMBER", "defaultValue": "4096000" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "recordFrameSyncSample", "blockType": "COMMAND", "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]", "description": "Converts one pattern observation into a latency sample and stores it for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" }, "CAPTURE_US": { "type": "NUMBER", "defaultValue": "0" }, "PATTERN_US": { "type": "NUMBER", "defaultValue": "0" }, "WRAP_US": { "type": "NUMBER", "defaultValue": "4096000" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "clearFrameSyncSamples", "blockType": "COMMAND", "text": "clear frame sync samples for camera [CAMERA]", "description": "Clears the latency samples stored for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncSampleCount", "blockType": "REPORTER", "text": "frame sync sample count for camera [CAMERA]", "description": "Returns how many latency samples are stored for the camera slot.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncSummary", "blockType": "REPORTER", "text": "frame sync summary for camera [CAMERA]", "description": "Returns the local latency summary for the camera slot as a JSON report.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "sendFrameSyncReport", "blockType": "COMMAND", "text": "send frame sync report for camera [CAMERA] to peer [PEER]", "description": "Sends the camera slot's latency summary to the peer on the internal sync channel.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" }, "PEER": { "type": "STRING", "defaultValue": "peer-a" } } }, { "opcode": "frameSyncReport", "blockType": "REPORTER", "text": "frame sync report", "description": "Returns every received frame sync report together with per-camera offsets as JSON.", "arguments": {} }, { "opcode": "frameSyncCameras", "blockType": "REPORTER", "text": "frame sync cameras", "description": "Returns a JSON array of the camera slots that have reported.", "arguments": {} }, { "opcode": "frameSyncLatencyOfCamera", "blockType": "REPORTER", "text": "frame sync latency us of camera [CAMERA]", "description": "Returns the reported median capture latency of the camera slot in microseconds.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "frameSyncOffsetOfCamera", "blockType": "REPORTER", "text": "frame sync offset us of camera [CAMERA]", "description": "Returns how many microseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.", "arguments": { "CAMERA": { "type": "STRING", "defaultValue": "camera-1" } } }, { "opcode": "clearFrameSyncReport", "blockType": "COMMAND", "text": "clear frame sync report", "description": "Clears every received frame sync report.", "arguments": {} }];
   const menus = { "networkMessages": { "acceptReporters": false, "items": ["door-open", "event", "*"] } };
   const definitions = {
     extensionName,
@@ -345,15 +345,15 @@
     if (record.version !== frameSyncReportVersion) return void 0;
     const cameraId = asNonEmptyString(record.cameraId);
     const measuredAtUs = asSafeInteger(record.measuredAtUs);
-    const latencyMs = asLatencyStats(record.latencyMs);
-    if (cameraId === void 0 || measuredAtUs === void 0 || !latencyMs) return void 0;
+    const latencyUs = asLatencyStats(record.latencyUs);
+    if (cameraId === void 0 || measuredAtUs === void 0 || !latencyUs) return void 0;
     return {
       schema: frameSyncReportSchema,
       version: frameSyncReportVersion,
       cameraId,
       referencePeer: asNonEmptyString(record.referencePeer) ?? "",
       measuredAtUs,
-      latencyMs,
+      latencyUs,
       clock: asClockQuality(record.clock)
     };
   }
@@ -389,13 +389,13 @@
   function asClockQuality(value) {
     const record = asRecord(value);
     if (!record) return null;
-    const offsetMs = asFiniteNumber(record.offsetMs);
-    const rttMs = asFiniteNumber(record.rttMs);
-    const uncertaintyMs = asFiniteNumber(record.uncertaintyMs);
+    const offsetUs = asFiniteNumber(record.offsetUs);
+    const rttUs = asFiniteNumber(record.rttUs);
+    const uncertaintyUs = asFiniteNumber(record.uncertaintyUs);
     const samples = asSafeInteger(record.samples);
-    if (offsetMs === void 0 || rttMs === void 0) return null;
-    if (uncertaintyMs === void 0 || samples === void 0) return null;
-    return { offsetMs, rttMs, uncertaintyMs, samples };
+    if (offsetUs === void 0 || rttUs === void 0) return null;
+    if (uncertaintyUs === void 0 || samples === void 0) return null;
+    return { offsetUs, rttUs, uncertaintyUs, samples };
   }
   function asRecord(value) {
     if (typeof value !== "object" || value === null || Array.isArray(value)) return void 0;
@@ -418,10 +418,10 @@
     return rounded;
   }
   const defaultSampleLimit = 2e4;
-  function frameLatencyMs(captureMs, patternMs, wrapMs = 0) {
-    const latency = captureMs - patternMs;
-    if (!(wrapMs > 0)) return latency;
-    return (latency % wrapMs + wrapMs) % wrapMs;
+  function frameLatencyUs(captureUs, patternUs, wrapUs = 0) {
+    const latency = captureUs - patternUs;
+    if (!(wrapUs > 0)) return latency;
+    return (latency % wrapUs + wrapUs) % wrapUs;
   }
   function summarizeLatencies(values) {
     const finite = values.filter((value) => Number.isFinite(value));
@@ -458,10 +458,10 @@
       this.samples = /* @__PURE__ */ new Map();
       this.limit = Math.max(1, limit);
     }
-    add(cameraId, latencyMs) {
-      if (!Number.isFinite(latencyMs)) return;
+    add(cameraId, latencyUs) {
+      if (!Number.isFinite(latencyUs)) return;
       const bucket = this.samples.get(cameraId) ?? [];
-      bucket.push(latencyMs);
+      bucket.push(latencyUs);
       while (bucket.length > this.limit) bucket.shift();
       this.samples.set(cameraId, bucket);
     }
@@ -491,7 +491,7 @@
       cameraId: options.cameraId,
       referencePeer: options.referencePeer,
       measuredAtUs: options.measuredAtUs,
-      latencyMs: options.latencyMs,
+      latencyUs: options.latencyUs,
       clock: options.clock
     };
   }
@@ -504,8 +504,8 @@
         cameraId: report.cameraId,
         peer,
         referencePeer: report.referencePeer,
-        latencyMs: report.latencyMs,
-        offsetMs: 0,
+        latencyUs: report.latencyUs,
+        offsetUs: 0,
         clock: report.clock,
         measuredAtUs: report.measuredAtUs,
         receivedAtUs
@@ -519,25 +519,25 @@
     has(cameraId) {
       return this.entries.has(cameraId);
     }
-    referenceLatencyMs() {
-      const medians = [...this.entries.values()].map((entry) => entry.latencyMs.median).sort((left, right) => left - right);
+    referenceLatencyUs() {
+      const medians = [...this.entries.values()].map((entry) => entry.latencyUs.median).sort((left, right) => left - right);
       return percentile(medians, 0.5);
     }
-    latencyMsOf(cameraId) {
-      return this.entries.get(cameraId)?.latencyMs.median ?? 0;
+    latencyUsOf(cameraId) {
+      return this.entries.get(cameraId)?.latencyUs.median ?? 0;
     }
-    offsetMsOf(cameraId) {
+    offsetUsOf(cameraId) {
       const entry = this.entries.get(cameraId);
       if (!entry) return 0;
-      return entry.latencyMs.median - this.referenceLatencyMs();
+      return entry.latencyUs.median - this.referenceLatencyUs();
     }
     overview() {
-      const referenceLatencyMs = this.referenceLatencyMs();
+      const referenceLatencyUs = this.referenceLatencyUs();
       return {
-        referenceLatencyMs,
+        referenceLatencyUs,
         cameras: this.cameras().map((cameraId) => {
           const entry = this.entries.get(cameraId);
-          return { ...entry, offsetMs: entry.latencyMs.median - referenceLatencyMs };
+          return { ...entry, offsetUs: entry.latencyUs.median - referenceLatencyUs };
         })
       };
     }
@@ -598,30 +598,30 @@
       const estimate = this.estimates.get(peer);
       if (!estimate) return null;
       return {
-        offsetMs: estimate.offsetMs,
-        rttMs: estimate.rttMs,
-        uncertaintyMs: estimate.uncertaintyMs,
+        offsetUs: estimate.offsetUs,
+        rttUs: estimate.rttUs,
+        uncertaintyUs: estimate.uncertaintyUs,
         samples: estimate.samples
       };
     }
-    offsetMsTo(peer) {
-      return this.estimates.get(peer)?.offsetMs ?? 0;
+    offsetUsTo(peer) {
+      return this.estimates.get(peer)?.offsetUs ?? 0;
     }
-    rttMsTo(peer) {
-      return this.estimates.get(peer)?.rttMs ?? 0;
+    rttUsTo(peer) {
+      return this.estimates.get(peer)?.rttUs ?? 0;
     }
-    uncertaintyMsTo(peer) {
-      return this.estimates.get(peer)?.uncertaintyMs ?? 0;
+    uncertaintyUsTo(peer) {
+      return this.estimates.get(peer)?.uncertaintyUs ?? 0;
     }
     hasEstimate(peer) {
       return this.estimates.has(peer);
     }
-    /** Converts a local millisecond timestamp into the named peer's clock. */
-    toPeerTimeMs(peer, localMs) {
-      return localMs + this.offsetMsTo(peer);
+    /** Converts a local microsecond timestamp into the named peer's clock. */
+    toPeerTimeUs(peer, localUs) {
+      return localUs + this.offsetUsTo(peer);
     }
-    localTimeMs() {
-      return this.nowUs() / 1e3;
+    localTimeUs() {
+      return this.nowUs();
     }
     forget(peer) {
       this.estimates.delete(peer);
@@ -641,8 +641,8 @@
       if (!pong) return void 0;
       const t3Us = this.nowUs();
       return {
-        offsetMs: (pong.t1Us - pong.t0Us + (pong.t2Us - t3Us)) / 2e3,
-        rttMs: (t3Us - pong.t0Us - (pong.t2Us - pong.t1Us)) / 1e3
+        offsetUs: (pong.t1Us - pong.t0Us + (pong.t2Us - t3Us)) / 2,
+        rttUs: t3Us - pong.t0Us - (pong.t2Us - pong.t1Us)
       };
     }
     key(peer, sequence) {
@@ -650,16 +650,16 @@
     }
   }
   function summarizeExchanges(peer, samples, updatedAtUs) {
-    const sorted = [...samples].sort((left, right) => left.rttMs - right.rttMs);
+    const sorted = [...samples].sort((left, right) => left.rttUs - right.rttUs);
     const keep = Math.max(1, Math.round(sorted.length / 4));
     const best = sorted.slice(0, keep);
-    const offsetMs = best.reduce((total, sample) => total + sample.offsetMs, 0) / best.length;
-    const rttMs = sorted[0]?.rttMs ?? 0;
+    const offsetUs = best.reduce((total, sample) => total + sample.offsetUs, 0) / best.length;
+    const rttUs = sorted[0]?.rttUs ?? 0;
     return {
       peer,
-      offsetMs,
-      rttMs,
-      uncertaintyMs: rttMs / 2,
+      offsetUs,
+      rttUs,
+      uncertaintyUs: rttUs / 2,
       samples: samples.length,
       updatedAtUs
     };
@@ -696,30 +696,30 @@
     async syncClock(peer) {
       return this.clock.syncWith(peer);
     }
-    clockOffsetMs(peer) {
-      return this.clock.offsetMsTo(peer);
+    clockOffsetUs(peer) {
+      return this.clock.offsetUsTo(peer);
     }
-    clockRoundTripMs(peer) {
-      return this.clock.rttMsTo(peer);
+    clockRoundTripUs(peer) {
+      return this.clock.rttUsTo(peer);
     }
-    clockUncertaintyMs(peer) {
-      return this.clock.uncertaintyMsTo(peer);
+    clockUncertaintyUs(peer) {
+      return this.clock.uncertaintyUsTo(peer);
     }
-    localTimeMs() {
-      return this.nowUs() / 1e3;
+    localTimeUs() {
+      return this.nowUs();
     }
-    peerTimeMs(peer) {
-      return this.clock.toPeerTimeMs(peer, this.localTimeMs());
+    peerTimeUs(peer) {
+      return this.clock.toPeerTimeUs(peer, this.localTimeUs());
     }
     /**
      * Latency between the moment the pattern was shown and the moment this
      * computer finished recording the frame, expressed in the peer's clock.
      */
-    frameLatency(captureMs, patternMs, wrapMs, peer) {
-      return frameLatencyMs(this.clock.toPeerTimeMs(peer, captureMs), patternMs, wrapMs);
+    frameLatency(captureUs, patternUs, wrapUs, peer) {
+      return frameLatencyUs(this.clock.toPeerTimeUs(peer, captureUs), patternUs, wrapUs);
     }
-    recordSample(cameraId, captureMs, patternMs, wrapMs, peer) {
-      const latency = this.frameLatency(captureMs, patternMs, wrapMs, peer);
+    recordSample(cameraId, captureUs, patternUs, wrapUs, peer) {
+      const latency = this.frameLatency(captureUs, patternUs, wrapUs, peer);
       this.samples.add(cameraId, latency);
       this.referencePeers.set(cameraId, peer);
       return latency;
@@ -732,14 +732,14 @@
       return this.samples.count(cameraId);
     }
     localReport(cameraId) {
-      const latencyMs = this.samples.summarize(cameraId);
-      if (!latencyMs) return void 0;
+      const latencyUs = this.samples.summarize(cameraId);
+      if (!latencyUs) return void 0;
       const referencePeer = this.referencePeers.get(cameraId) ?? "";
       return createFrameSyncReport({
         cameraId,
         referencePeer,
         measuredAtUs: this.nowUs(),
-        latencyMs,
+        latencyUs,
         clock: referencePeer ? this.clock.quality(referencePeer) : null
       });
     }
@@ -757,11 +757,11 @@
     reportCameras() {
       return JSON.stringify(this.registry.cameras());
     }
-    reportLatencyMs(cameraId) {
-      return this.registry.latencyMsOf(cameraId);
+    reportLatencyUs(cameraId) {
+      return this.registry.latencyUsOf(cameraId);
     }
-    reportOffsetMs(cameraId) {
-      return this.registry.offsetMsOf(cameraId);
+    reportOffsetUs(cameraId) {
+      return this.registry.offsetUsOf(cameraId);
     }
     clearReport() {
       this.registry.clear();
@@ -863,34 +863,34 @@
       await this.sync.syncClock(this.peer(args.PEER));
     }
     clockOffset(args) {
-      return this.sync.clockOffsetMs(this.peer(args.PEER));
+      return this.sync.clockOffsetUs(this.peer(args.PEER));
     }
     clockRoundTrip(args) {
-      return this.sync.clockRoundTripMs(this.peer(args.PEER));
+      return this.sync.clockRoundTripUs(this.peer(args.PEER));
     }
     clockUncertainty(args) {
-      return this.sync.clockUncertaintyMs(this.peer(args.PEER));
+      return this.sync.clockUncertaintyUs(this.peer(args.PEER));
     }
     peerTime(args) {
-      return this.sync.peerTimeMs(this.peer(args.PEER));
+      return this.sync.peerTimeUs(this.peer(args.PEER));
     }
     localTime() {
-      return this.sync.localTimeMs();
+      return this.sync.localTimeUs();
     }
     frameLatency(args) {
       return this.sync.frameLatency(
-        Scratch.Cast.toNumber(args.CAPTURE),
-        Scratch.Cast.toNumber(args.PATTERN),
-        Scratch.Cast.toNumber(args.WRAP),
+        Scratch.Cast.toNumber(args.CAPTURE_US),
+        Scratch.Cast.toNumber(args.PATTERN_US),
+        Scratch.Cast.toNumber(args.WRAP_US),
         this.peer(args.PEER)
       );
     }
     recordFrameSyncSample(args) {
       this.sync.recordSample(
         this.camera(args.CAMERA),
-        Scratch.Cast.toNumber(args.CAPTURE),
-        Scratch.Cast.toNumber(args.PATTERN),
-        Scratch.Cast.toNumber(args.WRAP),
+        Scratch.Cast.toNumber(args.CAPTURE_US),
+        Scratch.Cast.toNumber(args.PATTERN_US),
+        Scratch.Cast.toNumber(args.WRAP_US),
         this.peer(args.PEER)
       );
     }
@@ -914,10 +914,10 @@
       return this.sync.reportCameras();
     }
     frameSyncLatencyOfCamera(args) {
-      return this.sync.reportLatencyMs(this.camera(args.CAMERA));
+      return this.sync.reportLatencyUs(this.camera(args.CAMERA));
     }
     frameSyncOffsetOfCamera(args) {
-      return this.sync.reportOffsetMs(this.camera(args.CAMERA));
+      return this.sync.reportOffsetUs(this.camera(args.CAMERA));
     }
     clearFrameSyncReport() {
       this.sync.clearReport();

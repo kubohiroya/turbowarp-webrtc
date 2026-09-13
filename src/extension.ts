@@ -148,51 +148,51 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
   }
 
   public clockOffset(args: {PEER: unknown}): number {
-    return this.sync.clockOffsetMs(this.peer(args.PEER));
+    return this.sync.clockOffsetUs(this.peer(args.PEER));
   }
 
   public clockRoundTrip(args: {PEER: unknown}): number {
-    return this.sync.clockRoundTripMs(this.peer(args.PEER));
+    return this.sync.clockRoundTripUs(this.peer(args.PEER));
   }
 
   public clockUncertainty(args: {PEER: unknown}): number {
-    return this.sync.clockUncertaintyMs(this.peer(args.PEER));
+    return this.sync.clockUncertaintyUs(this.peer(args.PEER));
   }
 
   public peerTime(args: {PEER: unknown}): number {
-    return this.sync.peerTimeMs(this.peer(args.PEER));
+    return this.sync.peerTimeUs(this.peer(args.PEER));
   }
 
   public localTime(): number {
-    return this.sync.localTimeMs();
+    return this.sync.localTimeUs();
   }
 
   public frameLatency(args: {
-    CAPTURE: unknown;
-    PATTERN: unknown;
-    WRAP: unknown;
+    CAPTURE_US: unknown;
+    PATTERN_US: unknown;
+    WRAP_US: unknown;
     PEER: unknown;
   }): number {
     return this.sync.frameLatency(
-      Scratch.Cast.toNumber(args.CAPTURE),
-      Scratch.Cast.toNumber(args.PATTERN),
-      Scratch.Cast.toNumber(args.WRAP),
+      Scratch.Cast.toNumber(args.CAPTURE_US),
+      Scratch.Cast.toNumber(args.PATTERN_US),
+      Scratch.Cast.toNumber(args.WRAP_US),
       this.peer(args.PEER)
     );
   }
 
   public recordFrameSyncSample(args: {
     CAMERA: unknown;
-    CAPTURE: unknown;
-    PATTERN: unknown;
-    WRAP: unknown;
+    CAPTURE_US: unknown;
+    PATTERN_US: unknown;
+    WRAP_US: unknown;
     PEER: unknown;
   }): void {
     this.sync.recordSample(
       this.camera(args.CAMERA),
-      Scratch.Cast.toNumber(args.CAPTURE),
-      Scratch.Cast.toNumber(args.PATTERN),
-      Scratch.Cast.toNumber(args.WRAP),
+      Scratch.Cast.toNumber(args.CAPTURE_US),
+      Scratch.Cast.toNumber(args.PATTERN_US),
+      Scratch.Cast.toNumber(args.WRAP_US),
       this.peer(args.PEER)
     );
   }
@@ -223,11 +223,11 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
   }
 
   public frameSyncLatencyOfCamera(args: {CAMERA: unknown}): number {
-    return this.sync.reportLatencyMs(this.camera(args.CAMERA));
+    return this.sync.reportLatencyUs(this.camera(args.CAMERA));
   }
 
   public frameSyncOffsetOfCamera(args: {CAMERA: unknown}): number {
-    return this.sync.reportOffsetMs(this.camera(args.CAMERA));
+    return this.sync.reportOffsetUs(this.camera(args.CAMERA));
   }
 
   public clearFrameSyncReport(): void {

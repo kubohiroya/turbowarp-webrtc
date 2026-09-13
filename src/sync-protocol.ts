@@ -36,6 +36,7 @@ export interface ClockPong {
 
 export type ClockProbe = ClockPing | ClockPong;
 
+/** Latency order statistics. Every field is in microseconds. */
 export interface LatencyStats {
   count: number;
   min: number;
@@ -49,9 +50,9 @@ export interface LatencyStats {
 }
 
 export interface ClockQuality {
-  offsetMs: number;
-  rttMs: number;
-  uncertaintyMs: number;
+  offsetUs: number;
+  rttUs: number;
+  uncertaintyUs: number;
   samples: number;
 }
 
@@ -61,7 +62,7 @@ export interface FrameSyncReport {
   cameraId: string;
   referencePeer: string;
   measuredAtUs: number;
-  latencyMs: LatencyStats;
+  latencyUs: LatencyStats;
   clock: ClockQuality | null;
 }
 
@@ -119,15 +120,15 @@ export function parseFrameSyncReport(value: unknown): FrameSyncReport | undefine
   if (record.version !== frameSyncReportVersion) return undefined;
   const cameraId = asNonEmptyString(record.cameraId);
   const measuredAtUs = asSafeInteger(record.measuredAtUs);
-  const latencyMs = asLatencyStats(record.latencyMs);
-  if (cameraId === undefined || measuredAtUs === undefined || !latencyMs) return undefined;
+  const latencyUs = asLatencyStats(record.latencyUs);
+  if (cameraId === undefined || measuredAtUs === undefined || !latencyUs) return undefined;
   return {
     schema: frameSyncReportSchema,
     version: frameSyncReportVersion,
     cameraId,
     referencePeer: asNonEmptyString(record.referencePeer) ?? '',
     measuredAtUs,
-    latencyMs,
+    latencyUs,
     clock: asClockQuality(record.clock)
   };
 }
@@ -167,13 +168,13 @@ function asLatencyStats(value: unknown): LatencyStats | undefined {
 function asClockQuality(value: unknown): ClockQuality | null {
   const record = asRecord(value);
   if (!record) return null;
-  const offsetMs = asFiniteNumber(record.offsetMs);
-  const rttMs = asFiniteNumber(record.rttMs);
-  const uncertaintyMs = asFiniteNumber(record.uncertaintyMs);
+  const offsetUs = asFiniteNumber(record.offsetUs);
+  const rttUs = asFiniteNumber(record.rttUs);
+  const uncertaintyUs = asFiniteNumber(record.uncertaintyUs);
   const samples = asSafeInteger(record.samples);
-  if (offsetMs === undefined || rttMs === undefined) return null;
-  if (uncertaintyMs === undefined || samples === undefined) return null;
-  return {offsetMs, rttMs, uncertaintyMs, samples};
+  if (offsetUs === undefined || rttUs === undefined) return null;
+  if (uncertaintyUs === undefined || samples === undefined) return null;
+  return {offsetUs, rttUs, uncertaintyUs, samples};
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

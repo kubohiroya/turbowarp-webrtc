@@ -26,8 +26,8 @@ export interface ClockSyncOptions {
 }
 
 interface Exchange {
-  offsetMs: number;
-  rttMs: number;
+  offsetUs: number;
+  rttUs: number;
 }
 
 const defaultExchanges = 24;
@@ -105,36 +105,36 @@ export class ClockSync {
     const estimate = this.estimates.get(peer);
     if (!estimate) return null;
     return {
-      offsetMs: estimate.offsetMs,
-      rttMs: estimate.rttMs,
-      uncertaintyMs: estimate.uncertaintyMs,
+      offsetUs: estimate.offsetUs,
+      rttUs: estimate.rttUs,
+      uncertaintyUs: estimate.uncertaintyUs,
       samples: estimate.samples
     };
   }
 
-  public offsetMsTo(peer: string): number {
-    return this.estimates.get(peer)?.offsetMs ?? 0;
+  public offsetUsTo(peer: string): number {
+    return this.estimates.get(peer)?.offsetUs ?? 0;
   }
 
-  public rttMsTo(peer: string): number {
-    return this.estimates.get(peer)?.rttMs ?? 0;
+  public rttUsTo(peer: string): number {
+    return this.estimates.get(peer)?.rttUs ?? 0;
   }
 
-  public uncertaintyMsTo(peer: string): number {
-    return this.estimates.get(peer)?.uncertaintyMs ?? 0;
+  public uncertaintyUsTo(peer: string): number {
+    return this.estimates.get(peer)?.uncertaintyUs ?? 0;
   }
 
   public hasEstimate(peer: string): boolean {
     return this.estimates.has(peer);
   }
 
-  /** Converts a local millisecond timestamp into the named peer's clock. */
-  public toPeerTimeMs(peer: string, localMs: number): number {
-    return localMs + this.offsetMsTo(peer);
+  /** Converts a local microsecond timestamp into the named peer's clock. */
+  public toPeerTimeUs(peer: string, localUs: number): number {
+    return localUs + this.offsetUsTo(peer);
   }
 
-  public localTimeMs(): number {
-    return this.nowUs() / 1000;
+  public localTimeUs(): number {
+    return this.nowUs();
   }
 
   public forget(peer: string): void {
@@ -156,8 +156,8 @@ export class ClockSync {
     if (!pong) return undefined;
     const t3Us = this.nowUs();
     return {
-      offsetMs: (pong.t1Us - pong.t0Us + (pong.t2Us - t3Us)) / 2000,
-      rttMs: (t3Us - pong.t0Us - (pong.t2Us - pong.t1Us)) / 1000
+      offsetUs: (pong.t1Us - pong.t0Us + (pong.t2Us - t3Us)) / 2,
+      rttUs: t3Us - pong.t0Us - (pong.t2Us - pong.t1Us)
     };
   }
 
@@ -171,16 +171,16 @@ export function summarizeExchanges(
   samples: readonly Exchange[],
   updatedAtUs: number
 ): ClockEstimate {
-  const sorted = [...samples].sort((left, right) => left.rttMs - right.rttMs);
+  const sorted = [...samples].sort((left, right) => left.rttUs - right.rttUs);
   const keep = Math.max(1, Math.round(sorted.length / 4));
   const best = sorted.slice(0, keep);
-  const offsetMs = best.reduce((total, sample) => total + sample.offsetMs, 0) / best.length;
-  const rttMs = sorted[0]?.rttMs ?? 0;
+  const offsetUs = best.reduce((total, sample) => total + sample.offsetUs, 0) / best.length;
+  const rttUs = sorted[0]?.rttUs ?? 0;
   return {
     peer,
-    offsetMs,
-    rttMs,
-    uncertaintyMs: rttMs / 2,
+    offsetUs,
+    rttUs,
+    uncertaintyUs: rttUs / 2,
     samples: samples.length,
     updatedAtUs
   };

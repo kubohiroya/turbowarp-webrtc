@@ -313,17 +313,22 @@ describe('WebRtcManualPairingExtension', () => {
     const sync = new SyncService(transport, {nowUs: () => 2_000_000});
     const extension = new WebRtcManualPairingExtension(session, sync);
 
-    expect(extension.localTime()).toBe(2000);
+    expect(extension.localTime()).toBe(2_000_000);
     expect(
-      extension.frameLatency({CAPTURE: '10', PATTERN: '4060', WRAP: '4096', PEER: 'host'})
-    ).toBe(46);
+      extension.frameLatency({
+        CAPTURE_US: '10000',
+        PATTERN_US: '4060000',
+        WRAP_US: '4096000',
+        PEER: 'host'
+      })
+    ).toBe(46_000);
 
-    for (const latency of [40, 44, 48]) {
+    for (const latencyMs of [40, 44, 48]) {
       extension.recordFrameSyncSample({
         CAMERA: 'camera-1',
-        CAPTURE: String(1000 + latency),
-        PATTERN: '1000',
-        WRAP: '0',
+        CAPTURE_US: String(1_000_000 + latencyMs * 1000),
+        PATTERN_US: '1000000',
+        WRAP_US: '0',
         PEER: 'host'
       });
     }
@@ -333,7 +338,7 @@ describe('WebRtcManualPairingExtension', () => {
       schema: frameSyncReportSchema,
       cameraId: 'camera-1',
       referencePeer: 'host',
-      latencyMs: {count: 3, median: 44}
+      latencyUs: {count: 3, median: 44_000}
     });
 
     extension.sendFrameSyncReport({CAMERA: 'camera-1', PEER: 'fusion'});
@@ -386,7 +391,7 @@ describe('WebRtcManualPairingExtension', () => {
           cameraId,
           referencePeer: 'host',
           measuredAtUs: 1_000,
-          latencyMs: {
+          latencyUs: {
             count: 4,
             min: median - 2,
             p10: median - 2,
@@ -406,11 +411,11 @@ describe('WebRtcManualPairingExtension', () => {
     expect(extension.frameSyncLatencyOfCamera({CAMERA: 'camera-1'})).toBe(40);
     expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-1'})).toBe(-10);
     expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-2'})).toBe(10);
-    expect(JSON.parse(extension.frameSyncReport())).toMatchObject({referenceLatencyMs: 50});
+    expect(JSON.parse(extension.frameSyncReport())).toMatchObject({referenceLatencyUs: 50});
 
     extension.clearFrameSyncReport();
     expect(JSON.parse(extension.frameSyncReport())).toEqual({
-      referenceLatencyMs: 0,
+      referenceLatencyUs: 0,
       cameras: []
     });
   });

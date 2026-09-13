@@ -10,15 +10,15 @@ export interface FrameSyncEntry {
   cameraId: string;
   peer: string;
   referencePeer: string;
-  latencyMs: LatencyStats;
-  offsetMs: number;
+  latencyUs: LatencyStats;
+  offsetUs: number;
   clock: ClockQuality | null;
   measuredAtUs: number;
   receivedAtUs: number;
 }
 
 export interface FrameSyncOverview {
-  referenceLatencyMs: number;
+  referenceLatencyUs: number;
   cameras: FrameSyncEntry[];
 }
 
@@ -27,14 +27,14 @@ const defaultSampleLimit = 20000;
 /**
  * Converts one decoded pattern observation into a capture latency.
  *
- * `captureMs` must already be expressed in the clock that produced `patternMs`.
- * A positive `wrapMs` unwraps a pattern whose encoded time repeats, which keeps
+ * `captureUs` must already be expressed in the clock that produced `patternUs`.
+ * A positive `wrapUs` unwraps a pattern whose encoded time repeats, which keeps
  * the result correct as long as the true latency stays below the wrap period.
  */
-export function frameLatencyMs(captureMs: number, patternMs: number, wrapMs = 0): number {
-  const latency = captureMs - patternMs;
-  if (!(wrapMs > 0)) return latency;
-  return ((latency % wrapMs) + wrapMs) % wrapMs;
+export function frameLatencyUs(captureUs: number, patternUs: number, wrapUs = 0): number {
+  const latency = captureUs - patternUs;
+  if (!(wrapUs > 0)) return latency;
+  return ((latency % wrapUs) + wrapUs) % wrapUs;
 }
 
 export function summarizeLatencies(values: readonly number[]): LatencyStats | undefined {
@@ -79,10 +79,10 @@ export class LatencySampleStore {
     this.limit = Math.max(1, limit);
   }
 
-  public add(cameraId: string, latencyMs: number): void {
-    if (!Number.isFinite(latencyMs)) return;
+  public add(cameraId: string, latencyUs: number): void {
+    if (!Number.isFinite(latencyUs)) return;
     const bucket = this.samples.get(cameraId) ?? [];
-    bucket.push(latencyMs);
+    bucket.push(latencyUs);
     while (bucket.length > this.limit) bucket.shift();
     this.samples.set(cameraId, bucket);
   }
@@ -116,7 +116,7 @@ export function createFrameSyncReport(options: {
   cameraId: string;
   referencePeer: string;
   measuredAtUs: number;
-  latencyMs: LatencyStats;
+  latencyUs: LatencyStats;
   clock: ClockQuality | null;
 }): FrameSyncReport {
   return {
@@ -125,7 +125,7 @@ export function createFrameSyncReport(options: {
     cameraId: options.cameraId,
     referencePeer: options.referencePeer,
     measuredAtUs: options.measuredAtUs,
-    latencyMs: options.latencyMs,
+    latencyUs: options.latencyUs,
     clock: options.clock
   };
 }
@@ -146,8 +146,8 @@ export class FrameSyncRegistry {
       cameraId: report.cameraId,
       peer,
       referencePeer: report.referencePeer,
-      latencyMs: report.latencyMs,
-      offsetMs: 0,
+      latencyUs: report.latencyUs,
+      offsetUs: 0,
       clock: report.clock,
       measuredAtUs: report.measuredAtUs,
       receivedAtUs
@@ -164,30 +164,30 @@ export class FrameSyncRegistry {
     return this.entries.has(cameraId);
   }
 
-  public referenceLatencyMs(): number {
+  public referenceLatencyUs(): number {
     const medians = [...this.entries.values()]
-      .map((entry) => entry.latencyMs.median)
+      .map((entry) => entry.latencyUs.median)
       .sort((left, right) => left - right);
     return percentile(medians, 0.5);
   }
 
-  public latencyMsOf(cameraId: string): number {
-    return this.entries.get(cameraId)?.latencyMs.median ?? 0;
+  public latencyUsOf(cameraId: string): number {
+    return this.entries.get(cameraId)?.latencyUs.median ?? 0;
   }
 
-  public offsetMsOf(cameraId: string): number {
+  public offsetUsOf(cameraId: string): number {
     const entry = this.entries.get(cameraId);
     if (!entry) return 0;
-    return entry.latencyMs.median - this.referenceLatencyMs();
+    return entry.latencyUs.median - this.referenceLatencyUs();
   }
 
   public overview(): FrameSyncOverview {
-    const referenceLatencyMs = this.referenceLatencyMs();
+    const referenceLatencyUs = this.referenceLatencyUs();
     return {
-      referenceLatencyMs,
+      referenceLatencyUs,
       cameras: this.cameras().map((cameraId) => {
         const entry = this.entries.get(cameraId) as FrameSyncEntry;
-        return {...entry, offsetMs: entry.latencyMs.median - referenceLatencyMs};
+        return {...entry, offsetUs: entry.latencyUs.median - referenceLatencyUs};
       })
     };
   }

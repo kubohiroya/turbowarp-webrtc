@@ -142,11 +142,11 @@
       "blockType": "REPORTER",
       "arguments": [
         {
-          "id": "CAPTURE",
+          "id": "CAPTURE_US",
           "type": "NUMBER"
         },
         {
-          "id": "PATTERN",
+          "id": "PATTERN_US",
           "type": "NUMBER"
         },
         {
@@ -154,7 +154,7 @@
           "type": "STRING"
         },
         {
-          "id": "WRAP",
+          "id": "WRAP_US",
           "type": "NUMBER"
         }
       ]
@@ -293,11 +293,11 @@
           "type": "STRING"
         },
         {
-          "id": "CAPTURE",
+          "id": "CAPTURE_US",
           "type": "NUMBER"
         },
         {
-          "id": "PATTERN",
+          "id": "PATTERN_US",
           "type": "NUMBER"
         },
         {
@@ -305,7 +305,7 @@
           "type": "STRING"
         },
         {
-          "id": "WRAP",
+          "id": "WRAP_US",
           "type": "NUMBER"
         }
       ]

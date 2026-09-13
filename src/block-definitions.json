@@ -195,8 +195,8 @@
     {
       "opcode": "clockOffset",
       "blockType": "REPORTER",
-      "text": "clock offset to peer [PEER]",
-      "description": "Returns the milliseconds to add to a local timestamp to express it in the peer's clock.",
+      "text": "clock offset to peer [PEER] us",
+      "description": "Returns the microseconds to add to a local timestamp to express it in the peer's clock.",
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
@@ -204,8 +204,8 @@
     {
       "opcode": "clockRoundTrip",
       "blockType": "REPORTER",
-      "text": "clock round trip to peer [PEER]",
-      "description": "Returns the shortest round trip observed while probing the peer, in milliseconds.",
+      "text": "clock round trip to peer [PEER] us",
+      "description": "Returns the shortest round trip observed while probing the peer, in microseconds.",
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
@@ -213,8 +213,8 @@
     {
       "opcode": "clockUncertainty",
       "blockType": "REPORTER",
-      "text": "clock uncertainty to peer [PEER]",
-      "description": "Returns the clock offset uncertainty for the peer, which is half the shortest round trip.",
+      "text": "clock uncertainty to peer [PEER] us",
+      "description": "Returns the clock offset uncertainty for the peer in microseconds, which is half the shortest round trip.",
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
@@ -222,8 +222,8 @@
     {
       "opcode": "peerTime",
       "blockType": "REPORTER",
-      "text": "time in clock of peer [PEER]",
-      "description": "Returns the current local time expressed in the peer's clock, in milliseconds.",
+      "text": "time in clock of peer [PEER] us",
+      "description": "Returns the current local time expressed in the peer's clock, in microseconds.",
       "arguments": {
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
@@ -231,32 +231,32 @@
     {
       "opcode": "localTime",
       "blockType": "REPORTER",
-      "text": "local time",
-      "description": "Returns the local high-resolution clock in milliseconds.",
+      "text": "local time us",
+      "description": "Returns the local high-resolution clock in microseconds.",
       "arguments": {}
     },
     {
       "opcode": "frameLatency",
       "blockType": "REPORTER",
-      "text": "frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]",
-      "description": "Returns how many milliseconds after the displayed pattern time the local frame was captured. CAPTURE is a local timestamp, PATTERN is the decoded display time in the peer's clock, and WRAP is the pattern repeat period in milliseconds, or 0 when the pattern never repeats.",
+      "text": "frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
+      "description": "Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.",
       "arguments": {
-        "CAPTURE": {"type": "NUMBER", "defaultValue": "0"},
-        "PATTERN": {"type": "NUMBER", "defaultValue": "0"},
-        "WRAP": {"type": "NUMBER", "defaultValue": "4096"},
+        "CAPTURE_US": {"type": "NUMBER", "defaultValue": "0"},
+        "PATTERN_US": {"type": "NUMBER", "defaultValue": "0"},
+        "WRAP_US": {"type": "NUMBER", "defaultValue": "4096000"},
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
     },
     {
       "opcode": "recordFrameSyncSample",
       "blockType": "COMMAND",
-      "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]",
+      "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
       "description": "Converts one pattern observation into a latency sample and stores it for the camera slot.",
       "arguments": {
         "CAMERA": {"type": "STRING", "defaultValue": "camera-1"},
-        "CAPTURE": {"type": "NUMBER", "defaultValue": "0"},
-        "PATTERN": {"type": "NUMBER", "defaultValue": "0"},
-        "WRAP": {"type": "NUMBER", "defaultValue": "4096"},
+        "CAPTURE_US": {"type": "NUMBER", "defaultValue": "0"},
+        "PATTERN_US": {"type": "NUMBER", "defaultValue": "0"},
+        "WRAP_US": {"type": "NUMBER", "defaultValue": "4096000"},
         "PEER": {"type": "STRING", "defaultValue": "peer-a"}
       }
     },
@@ -314,8 +314,8 @@
     {
       "opcode": "frameSyncLatencyOfCamera",
       "blockType": "REPORTER",
-      "text": "frame sync latency of camera [CAMERA]",
-      "description": "Returns the reported median capture latency of the camera slot in milliseconds.",
+      "text": "frame sync latency us of camera [CAMERA]",
+      "description": "Returns the reported median capture latency of the camera slot in microseconds.",
       "arguments": {
         "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
       }
@@ -323,8 +323,8 @@
     {
       "opcode": "frameSyncOffsetOfCamera",
       "blockType": "REPORTER",
-      "text": "frame sync offset of camera [CAMERA]",
-      "description": "Returns how many milliseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.",
+      "text": "frame sync offset us of camera [CAMERA]",
+      "description": "Returns how many microseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.",
       "arguments": {
         "CAMERA": {"type": "STRING", "defaultValue": "camera-1"}
       }

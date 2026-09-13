@@ -84,11 +84,11 @@ describe('SyncService', () => {
 
     const estimate = await camera.syncClock('fusion-pc');
 
-    expect(estimate.offsetMs).toBeCloseTo(100, 6);
-    expect(camera.clockOffsetMs('fusion-pc')).toBeCloseTo(100, 6);
-    expect(camera.clockRoundTripMs('fusion-pc')).toBe(0);
-    expect(camera.peerTimeMs('fusion-pc')).toBeCloseTo(1100, 6);
-    expect(camera.localTimeMs()).toBe(1000);
+    expect(estimate.offsetUs).toBeCloseTo(100_000, 6);
+    expect(camera.clockOffsetUs('fusion-pc')).toBeCloseTo(100_000, 6);
+    expect(camera.clockRoundTripUs('fusion-pc')).toBe(0);
+    expect(camera.peerTimeUs('fusion-pc')).toBeCloseTo(1_100_000, 6);
+    expect(camera.localTimeUs()).toBe(1_000_000);
     expect(cameraLink.sent.every((event) => event.channel === syncChannel)).toBe(true);
   });
 
@@ -100,23 +100,23 @@ describe('SyncService', () => {
     await camera.syncClock('fusion-pc');
 
     // The capture happened 100 ms before the peer clock reading it maps onto.
-    expect(camera.frameLatency(1000, 1100, 0, 'fusion-pc')).toBeCloseTo(0, 6);
-    expect(camera.frameLatency(1000, 1050, 0, 'fusion-pc')).toBeCloseTo(50, 6);
+    expect(camera.frameLatency(1_000_000, 1_100_000, 0, 'fusion-pc')).toBeCloseTo(0, 6);
+    expect(camera.frameLatency(1_000_000, 1_050_000, 0, 'fusion-pc')).toBeCloseTo(50_000, 6);
   });
 
   it('summarizes local samples and delivers them to the aggregating peer', async () => {
     const {camera, fusion, cameraLink} = createPair();
     await camera.syncClock('fusion-pc');
 
-    for (const latency of [40, 44, 48, 52, 56]) {
-      camera.recordSample('camera-1', 1000 + latency, 1000, 0, 'fusion-pc');
+    for (const latencyMs of [40, 44, 48, 52, 56]) {
+      camera.recordSample('camera-1', 1_000_000 + latencyMs * 1000, 1_000_000, 0, 'fusion-pc');
     }
 
     expect(camera.sampleCount('camera-1')).toBe(5);
     expect(camera.localReport('camera-1')).toMatchObject({
       cameraId: 'camera-1',
       referencePeer: 'fusion-pc',
-      latencyMs: {count: 5, median: 48, min: 40, max: 56}
+      latencyUs: {count: 5, median: 48_000, min: 40_000, max: 56_000}
     });
 
     camera.sendReport('camera-1', 'fusion-pc');
@@ -124,11 +124,11 @@ describe('SyncService', () => {
     const report = cameraLink.sent[cameraLink.sent.length - 1];
     expect(report).toMatchObject({peer: 'fusion-pc', type: frameSyncReportSchema, channel: syncChannel});
     expect(JSON.parse(fusion.reportCameras())).toEqual(['camera-1']);
-    expect(fusion.reportLatencyMs('camera-1')).toBe(48);
-    expect(fusion.reportOffsetMs('camera-1')).toBe(0);
+    expect(fusion.reportLatencyUs('camera-1')).toBe(48_000);
+    expect(fusion.reportOffsetUs('camera-1')).toBe(0);
     expect(JSON.parse(fusion.reportOverview())).toMatchObject({
-      referenceLatencyMs: 48,
-      cameras: [{cameraId: 'camera-1', peer: 'camera-pc', offsetMs: 0}]
+      referenceLatencyUs: 48_000,
+      cameras: [{cameraId: 'camera-1', peer: 'camera-pc', offsetUs: 0}]
     });
 
     fusion.clearReport();

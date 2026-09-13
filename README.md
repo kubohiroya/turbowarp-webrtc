@@ -66,26 +66,28 @@ Computers that film the same subject do not finish recording a frame at the same
 
 The measurement needs a display whose content encodes the time at which it was shown. One computer shows that pattern, a projector puts it in front of every camera, and each camera computer decodes the pattern out of its own frames. Showing the pattern and decoding it are application concerns and live in the [multiview-pose](https://github.com/kubohiroya/multiview-pose/issues/8) applications; this extension provides the clock probe and the reporting path that turn those observations into comparable numbers.
 
+Every timestamp and duration these blocks accept or return is in **microseconds**, matching the `twmp/clock-probe` contract and the pose frame capture timestamp, so the same value can be passed to both extensions without conversion.
+
 ### 1. Align the clocks
 
 `sync clock with peer [PEER]` runs a `twmp/clock-probe` version 1 exchange over the existing DataChannel. Every exchange records the request send time, the remote receive time, the remote reply time, and the reply arrival time. The offset is averaged over the fastest quarter of the exchanges, because the shortest round trips carry the least queuing noise.
 
-- `clock offset to peer [PEER]`: milliseconds to add to a local timestamp to express it in the peer's clock.
-- `clock round trip to peer [PEER]`: the shortest round trip observed while probing.
-- `clock uncertainty to peer [PEER]`: half that round trip, which bounds the residual offset error.
-- `time in clock of peer [PEER]` and `local time`: read either clock directly.
+- `clock offset to peer [PEER] us`: microseconds to add to a local timestamp to express it in the peer's clock.
+- `clock round trip to peer [PEER] us`: the shortest round trip observed while probing.
+- `clock uncertainty to peer [PEER] us`: half that round trip, which bounds the residual offset error.
+- `time in clock of peer [PEER] us` and `local time us`: read either clock directly.
 
 Probe traffic uses the internal `sync` channel and never enters the receive queue, so probing at a high rate cannot evict application messages.
 
 ### 2. Collect samples
 
-For every decoded frame, `record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]` turns one observation into a latency sample:
+For every decoded frame, `record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` turns one observation into a latency sample:
 
 ```text
-latency = (CAPTURE + clock offset to PEER) - PATTERN
+latency = (CAPTURE_US + clock offset to PEER) - PATTERN_US
 ```
 
-`CAPTURE` is the local timestamp of the recorded frame, `PATTERN` is the display time decoded out of that frame, and `WRAP` is the period after which the displayed time repeats: 4096 ms for a 12 bit millisecond pattern, or 0 when the pattern never repeats. Wrapping is resolved correctly as long as the true latency stays below the wrap period. `frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]` returns the same number without storing it, which suits a live readout.
+`CAPTURE_US` is the local timestamp of the recorded frame, `PATTERN_US` is the display time decoded out of that frame, and `WRAP_US` is the period after which the displayed time repeats: 4096000 for a 12 bit millisecond pattern, or 0 when the pattern never repeats. Wrapping is resolved correctly as long as the true latency stays below the wrap period. `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]` returns the same number without storing it, which suits a live readout.
 
 ### 3. Report and aggregate
 
@@ -98,22 +100,22 @@ latency = (CAPTURE + clock offset to PEER) - PATTERN
   "cameraId": "camera-1",
   "referencePeer": "host",
   "measuredAtUs": 1787616000000000,
-  "latencyMs": {
+  "latencyUs": {
     "count": 240,
-    "min": 38.2,
-    "p10": 41.0,
-    "median": 47.5,
-    "p90": 62.4,
-    "max": 71.9,
-    "mean": 49.1,
-    "mad": 5.2,
-    "stddev": 7.8
+    "min": 38200,
+    "p10": 41000,
+    "median": 47500,
+    "p90": 62400,
+    "max": 71900,
+    "mean": 49100,
+    "mad": 5200,
+    "stddev": 7800
   },
-  "clock": {"offsetMs": -12.4, "rttMs": 3.1, "uncertaintyMs": 1.55, "samples": 24}
+  "clock": {"offsetUs": -12400, "rttUs": 3100, "uncertaintyUs": 1550, "samples": 24}
 }
 ```
 
-On the aggregating computer, `frame sync report` returns every received report together with the per-camera offsets, `frame sync latency of camera [CAMERA]` returns that camera's median latency, and `frame sync offset of camera [CAMERA]` returns how much later that camera finishes recording a frame than the reference camera. The reference is the median of the per-camera medians. Subtracting a camera's offset from its frame timestamps puts every camera on one timeline.
+On the aggregating computer, `frame sync report` returns every received report together with the per-camera offsets, `frame sync latency us of camera [CAMERA]` returns that camera's median latency, and `frame sync offset us of camera [CAMERA]` returns how much later that camera finishes recording a frame than the reference camera. The reference is the median of the per-camera medians. Subtracting a camera's offset from its frame timestamps puts every camera on one timeline.
 
 Latency is summarized as median, MAD, and the 10th and 90th percentiles instead of a mean alone, because camera pipelines delay and drop frames asymmetrically. A delay shared by every camera, such as the projector and the display pipeline, stays in the absolute latency but cancels out of the offsets.
 
@@ -364,9 +366,9 @@ Runs a clock probe exchange with the peer and stores the resulting clock offset.
 | Opcode | `syncClock` |
 | `PEER` | String, default: `peer-a` |
 
-### `clock offset to peer [PEER]`
+### `clock offset to peer [PEER] us`
 
-Returns the milliseconds to add to a local timestamp to express it in the peer's clock.
+Returns the microseconds to add to a local timestamp to express it in the peer's clock.
 
 | Property | Value |
 |---|---|
@@ -374,9 +376,9 @@ Returns the milliseconds to add to a local timestamp to express it in the peer's
 | Opcode | `clockOffset` |
 | `PEER` | String, default: `peer-a` |
 
-### `clock round trip to peer [PEER]`
+### `clock round trip to peer [PEER] us`
 
-Returns the shortest round trip observed while probing the peer, in milliseconds.
+Returns the shortest round trip observed while probing the peer, in microseconds.
 
 | Property | Value |
 |---|---|
@@ -384,9 +386,9 @@ Returns the shortest round trip observed while probing the peer, in milliseconds
 | Opcode | `clockRoundTrip` |
 | `PEER` | String, default: `peer-a` |
 
-### `clock uncertainty to peer [PEER]`
+### `clock uncertainty to peer [PEER] us`
 
-Returns the clock offset uncertainty for the peer, which is half the shortest round trip.
+Returns the clock offset uncertainty for the peer in microseconds, which is half the shortest round trip.
 
 | Property | Value |
 |---|---|
@@ -394,9 +396,9 @@ Returns the clock offset uncertainty for the peer, which is half the shortest ro
 | Opcode | `clockUncertainty` |
 | `PEER` | String, default: `peer-a` |
 
-### `time in clock of peer [PEER]`
+### `time in clock of peer [PEER] us`
 
-Returns the current local time expressed in the peer's clock, in milliseconds.
+Returns the current local time expressed in the peer's clock, in microseconds.
 
 | Property | Value |
 |---|---|
@@ -404,29 +406,29 @@ Returns the current local time expressed in the peer's clock, in milliseconds.
 | Opcode | `peerTime` |
 | `PEER` | String, default: `peer-a` |
 
-### `local time`
+### `local time us`
 
-Returns the local high-resolution clock in milliseconds.
+Returns the local high-resolution clock in microseconds.
 
 | Property | Value |
 |---|---|
 | Type | Reporter |
 | Opcode | `localTime` |
 
-### `frame latency for capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]`
+### `frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
-Returns how many milliseconds after the displayed pattern time the local frame was captured. CAPTURE is a local timestamp, PATTERN is the decoded display time in the peer's clock, and WRAP is the pattern repeat period in milliseconds, or 0 when the pattern never repeats.
+Returns how many microseconds after the displayed pattern time the local frame was captured. CAPTURE_US is a local timestamp, PATTERN_US is the decoded display time in the peer's clock, and WRAP_US is the pattern repeat period, or 0 when the pattern never repeats.
 
 | Property | Value |
 |---|---|
 | Type | Reporter |
 | Opcode | `frameLatency` |
-| `CAPTURE` | Number, default: `0` |
-| `PATTERN` | Number, default: `0` |
-| `WRAP` | Number, default: `4096` |
+| `CAPTURE_US` | Number, default: `0` |
+| `PATTERN_US` | Number, default: `0` |
+| `WRAP_US` | Number, default: `4096000` |
 | `PEER` | String, default: `peer-a` |
 
-### `record frame sync sample for camera [CAMERA] capture [CAPTURE] pattern [PATTERN] wrap [WRAP] from peer [PEER]`
+### `record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]`
 
 Converts one pattern observation into a latency sample and stores it for the camera slot.
 
@@ -435,9 +437,9 @@ Converts one pattern observation into a latency sample and stores it for the cam
 | Type | Command |
 | Opcode | `recordFrameSyncSample` |
 | `CAMERA` | String, default: `camera-1` |
-| `CAPTURE` | Number, default: `0` |
-| `PATTERN` | Number, default: `0` |
-| `WRAP` | Number, default: `4096` |
+| `CAPTURE_US` | Number, default: `0` |
+| `PATTERN_US` | Number, default: `0` |
+| `WRAP_US` | Number, default: `4096000` |
 | `PEER` | String, default: `peer-a` |
 
 ### `clear frame sync samples for camera [CAMERA]`
@@ -499,9 +501,9 @@ Returns a JSON array of the camera slots that have reported.
 | Type | Reporter |
 | Opcode | `frameSyncCameras` |
 
-### `frame sync latency of camera [CAMERA]`
+### `frame sync latency us of camera [CAMERA]`
 
-Returns the reported median capture latency of the camera slot in milliseconds.
+Returns the reported median capture latency of the camera slot in microseconds.
 
 | Property | Value |
 |---|---|
@@ -509,9 +511,9 @@ Returns the reported median capture latency of the camera slot in milliseconds.
 | Opcode | `frameSyncLatencyOfCamera` |
 | `CAMERA` | String, default: `camera-1` |
 
-### `frame sync offset of camera [CAMERA]`
+### `frame sync offset us of camera [CAMERA]`
 
-Returns how many milliseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.
+Returns how many microseconds later than the reference camera this camera finishes recording a frame. Subtract it from the camera's frame timestamps to align the cameras.
 
 | Property | Value |
 |---|---|

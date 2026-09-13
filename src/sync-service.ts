@@ -2,7 +2,7 @@ import {
   FrameSyncRegistry,
   LatencySampleStore,
   createFrameSyncReport,
-  frameLatencyMs
+  frameLatencyUs
 } from './frame-sync.js';
 import {ClockSync, type ClockEstimate, type ClockSyncOptions} from './sync-clock.js';
 import {
@@ -67,42 +67,42 @@ export class SyncService {
     return this.clock.syncWith(peer);
   }
 
-  public clockOffsetMs(peer: string): number {
-    return this.clock.offsetMsTo(peer);
+  public clockOffsetUs(peer: string): number {
+    return this.clock.offsetUsTo(peer);
   }
 
-  public clockRoundTripMs(peer: string): number {
-    return this.clock.rttMsTo(peer);
+  public clockRoundTripUs(peer: string): number {
+    return this.clock.rttUsTo(peer);
   }
 
-  public clockUncertaintyMs(peer: string): number {
-    return this.clock.uncertaintyMsTo(peer);
+  public clockUncertaintyUs(peer: string): number {
+    return this.clock.uncertaintyUsTo(peer);
   }
 
-  public localTimeMs(): number {
-    return this.nowUs() / 1000;
+  public localTimeUs(): number {
+    return this.nowUs();
   }
 
-  public peerTimeMs(peer: string): number {
-    return this.clock.toPeerTimeMs(peer, this.localTimeMs());
+  public peerTimeUs(peer: string): number {
+    return this.clock.toPeerTimeUs(peer, this.localTimeUs());
   }
 
   /**
    * Latency between the moment the pattern was shown and the moment this
    * computer finished recording the frame, expressed in the peer's clock.
    */
-  public frameLatency(captureMs: number, patternMs: number, wrapMs: number, peer: string): number {
-    return frameLatencyMs(this.clock.toPeerTimeMs(peer, captureMs), patternMs, wrapMs);
+  public frameLatency(captureUs: number, patternUs: number, wrapUs: number, peer: string): number {
+    return frameLatencyUs(this.clock.toPeerTimeUs(peer, captureUs), patternUs, wrapUs);
   }
 
   public recordSample(
     cameraId: string,
-    captureMs: number,
-    patternMs: number,
-    wrapMs: number,
+    captureUs: number,
+    patternUs: number,
+    wrapUs: number,
     peer: string
   ): number {
-    const latency = this.frameLatency(captureMs, patternMs, wrapMs, peer);
+    const latency = this.frameLatency(captureUs, patternUs, wrapUs, peer);
     this.samples.add(cameraId, latency);
     this.referencePeers.set(cameraId, peer);
     return latency;
@@ -118,14 +118,14 @@ export class SyncService {
   }
 
   public localReport(cameraId: string): FrameSyncReport | undefined {
-    const latencyMs = this.samples.summarize(cameraId);
-    if (!latencyMs) return undefined;
+    const latencyUs = this.samples.summarize(cameraId);
+    if (!latencyUs) return undefined;
     const referencePeer = this.referencePeers.get(cameraId) ?? '';
     return createFrameSyncReport({
       cameraId,
       referencePeer,
       measuredAtUs: this.nowUs(),
-      latencyMs,
+      latencyUs,
       clock: referencePeer ? this.clock.quality(referencePeer) : null
     });
   }
@@ -147,12 +147,12 @@ export class SyncService {
     return JSON.stringify(this.registry.cameras());
   }
 
-  public reportLatencyMs(cameraId: string): number {
-    return this.registry.latencyMsOf(cameraId);
+  public reportLatencyUs(cameraId: string): number {
+    return this.registry.latencyUsOf(cameraId);
   }
 
-  public reportOffsetMs(cameraId: string): number {
-    return this.registry.offsetMsOf(cameraId);
+  public reportOffsetUs(cameraId: string): number {
+    return this.registry.offsetUsOf(cameraId);
   }
 
   public clearReport(): void {
