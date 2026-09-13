@@ -13,6 +13,9 @@ import {
 export type IceMode = 'lan' | 'stun';
 export type MessageHandler = (message: ReceivedEnvelope) => void;
 
+/** Consumes transport-internal traffic. Returning true keeps it out of the receive queue. */
+export type InternalMessageHandler = (message: ReceivedEnvelope) => boolean;
+
 export interface ManualPeerSessionOptions {
   localId?: string;
   queueLimit?: number;
@@ -27,6 +30,7 @@ export interface PeerSessionPort {
   acceptAnswer(peer: string, code: string): Promise<void>;
   sendEvent(peer: string, type: string, payloadText: string, channel: string): void;
   setMessageHandler(handler: MessageHandler | undefined): void;
+  setInternalHandler(handler: InternalMessageHandler | undefined): void;
   hasMessages(): boolean;
   messageCount(): number;
   nextMessage(): string;
@@ -55,6 +59,7 @@ export class ManualPeerSession implements PeerSessionPort {
   private receiveQueue: ReceivedEnvelope[] = [];
   private latestMessage: ReceivedEnvelope | undefined;
   private messageHandler: MessageHandler | undefined;
+  private internalHandler: InternalMessageHandler | undefined;
   private seq = 0;
 
   public constructor(options: ManualPeerSessionOptions = {}) {
@@ -121,6 +126,10 @@ export class ManualPeerSession implements PeerSessionPort {
 
   public setMessageHandler(handler: MessageHandler | undefined): void {
     this.messageHandler = handler;
+  }
+
+  public setInternalHandler(handler: InternalMessageHandler | undefined): void {
+    this.internalHandler = handler;
   }
 
   public hasMessages(): boolean {
@@ -223,6 +232,7 @@ export class ManualPeerSession implements PeerSessionPort {
   }
 
   private pushMessage(message: ReceivedEnvelope): void {
+    if (this.consumeInternally(message)) return;
     this.receiveQueue.push(message);
     while (this.receiveQueue.length > this.queueLimit) {
       this.receiveQueue.shift();
@@ -232,6 +242,18 @@ export class ManualPeerSession implements PeerSessionPort {
       this.messageHandler?.(message);
     } catch {
       // Delivery hooks must not corrupt the transport queue.
+    }
+  }
+
+  private consumeInternally(message: ReceivedEnvelope): boolean {
+    if (!this.internalHandler) return false;
+    try {
+      return this.internalHandler(message) === true;
+    } catch {
+      // A handler only throws once it is already handling transport traffic, so
+      // the message is still consumed. Falling through would push internal
+      // traffic into the receive queue and start application hat blocks.
+      return true;
     }
   }
 

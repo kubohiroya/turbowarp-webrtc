@@ -1,7 +1,19 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {WebRtcManualPairingExtension} from '../src/extension.js';
-import type {IceMode, MessageHandler} from '../src/manual-peer-session.js';
+import type {
+  IceMode,
+  InternalMessageHandler,
+  MessageHandler
+} from '../src/manual-peer-session.js';
 import {protocolVersion, type ReceivedEnvelope} from '../src/protocol.js';
+import {SyncService} from '../src/sync-service.js';
+import {
+  clockProbeSchema,
+  createClockPing,
+  frameSyncReportSchema,
+  frameSyncReportVersion,
+  syncChannel
+} from '../src/sync-protocol.js';
 
 type TestThread = Record<string, unknown>;
 type StartHatsMock = ReturnType<
@@ -14,6 +26,7 @@ class FakeSession {
   public answers = new Map<string, string>();
   public messages: string[] = ['{"type":"door-open"}'];
   private messageHandler: MessageHandler | undefined;
+  private internalHandler: InternalMessageHandler | undefined;
 
   public setIceMode(mode: string): IceMode {
     this.calls.push(`setIceMode:${mode}`);
@@ -50,6 +63,27 @@ class FakeSession {
 
   public setMessageHandler(handler: MessageHandler | undefined): void {
     this.messageHandler = handler;
+  }
+
+  public setInternalHandler(handler: InternalMessageHandler | undefined): void {
+    this.internalHandler = handler;
+  }
+
+  public deliverInternal(message: Partial<ReceivedEnvelope> = {}): boolean {
+    return (
+      this.internalHandler?.({
+        version: protocolVersion,
+        id: 'internal-1',
+        seq: 1,
+        from: 'remote-id',
+        peer: 'peer-a',
+        channel: 'sync',
+        type: 'twmp/clock-probe',
+        payload: {},
+        timestamp: Date.now(),
+        ...message
+      }) ?? false
+    );
   }
 
   public receive(message: Partial<ReceivedEnvelope> = {}): void {
@@ -103,9 +137,10 @@ class FakeSession {
 beforeEach(() => {
   vi.stubGlobal('Scratch', {
     BlockType: {COMMAND: 'command', REPORTER: 'reporter', BOOLEAN: 'boolean', EVENT: 'event'},
-    ArgumentType: {STRING: 'string'},
+    ArgumentType: {STRING: 'string', NUMBER: 'number'},
     Cast: {
-      toString: (value: unknown) => String(value)
+      toString: (value: unknown) => String(value),
+      toNumber: (value: unknown) => Number(value)
     },
     translate: (message: string | {default: string}) => (typeof message === 'string' ? message : message.default),
     vm: {
@@ -123,6 +158,35 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
 });
+
+/** A service whose probes answer themselves, so blocks have a clock estimate. */
+function loopbackSync(nowUs: number): {
+  sync: SyncService;
+  transport: {sendEvent: ReturnType<typeof vi.fn>};
+} {
+  const transport = {
+    sendEvent: vi.fn((peer: string, type: string, payloadText: string, channel: string) => {
+      sync.handleEnvelope({
+        version: protocolVersion,
+        id: `loopback-${type}`,
+        seq: 1,
+        from: peer,
+        peer,
+        channel,
+        type,
+        payload: JSON.parse(payloadText),
+        timestamp: 0
+      });
+    })
+  };
+  const sync: SyncService = new SyncService(transport, {
+    nowUs: () => nowUs,
+    wait: () => Promise.resolve(),
+    exchanges: 1,
+    intervalMs: 0
+  });
+  return {sync, transport};
+}
 
 function startHatsMock(): StartHatsMock {
   return vi.mocked(Scratch.vm!.runtime!.startHats);
@@ -159,7 +223,24 @@ describe('WebRtcManualPairingExtension', () => {
       'clearMessages',
       'connectionState',
       'connectedPeers',
-      'closePeer'
+      'closePeer',
+      'syncClock',
+      'clockOffset',
+      'clockRoundTrip',
+      'clockUncertainty',
+      'peerTime',
+      'localTime',
+      'frameLatency',
+      'recordFrameSyncSample',
+      'clearFrameSyncSamples',
+      'frameSyncSampleCount',
+      'frameSyncSummary',
+      'sendFrameSyncReport',
+      'frameSyncReport',
+      'frameSyncCameras',
+      'frameSyncLatencyOfCamera',
+      'frameSyncOffsetOfCamera',
+      'clearFrameSyncReport'
     ]);
   });
 
@@ -253,5 +334,128 @@ describe('WebRtcManualPairingExtension', () => {
       '{"pin":2}'
     );
     expect(extension.networkMessagePayload()).toBe('{"pin":2}');
+  });
+
+  it('measures frame sync latency and reports it to the aggregating peer', async () => {
+    const session = new FakeSession();
+    const {sync, transport} = loopbackSync(2_000_000);
+    const extension = new WebRtcManualPairingExtension(session, sync);
+    await extension.syncClock({PEER: 'host'});
+
+    expect(extension.localTime()).toBe(2_000_000);
+    expect(
+      extension.frameLatency({
+        CAPTURE_US: '10000',
+        PATTERN_US: '4060000',
+        WRAP_US: '4096000',
+        PEER: 'host'
+      })
+    ).toBe(46_000);
+
+    for (const latencyMs of [40, 44, 48]) {
+      extension.recordFrameSyncSample({
+        CAMERA: 'camera-1',
+        CAPTURE_US: String(1_000_000 + latencyMs * 1000),
+        PATTERN_US: '1000000',
+        WRAP_US: '0',
+        PEER: 'host'
+      });
+    }
+
+    expect(extension.frameSyncSampleCount({CAMERA: 'camera-1'})).toBe(3);
+    expect(JSON.parse(extension.frameSyncSummary({CAMERA: 'camera-1'}))).toMatchObject({
+      schema: frameSyncReportSchema,
+      cameraId: 'camera-1',
+      referencePeer: 'host',
+      latencyUs: {count: 3, median: 44_000}
+    });
+
+    extension.sendFrameSyncReport({CAMERA: 'camera-1', PEER: 'fusion'});
+    expect(transport.sendEvent).toHaveBeenCalledWith(
+      'fusion',
+      frameSyncReportSchema,
+      expect.stringContaining('"cameraId":"camera-1"'),
+      syncChannel
+    );
+
+    expect(() =>
+      extension.recordFrameSyncSample({
+        CAMERA: 'camera-1',
+        CAPTURE_US: '0',
+        PATTERN_US: '0',
+        WRAP_US: '0',
+        PEER: 'never-probed'
+      })
+    ).toThrow('Sync the clock with peer never-probed');
+
+    extension.clearFrameSyncSamples({CAMERA: 'camera-1'});
+    expect(extension.frameSyncSampleCount({CAMERA: 'camera-1'})).toBe(0);
+    expect(extension.frameSyncSummary({CAMERA: 'camera-1'})).toBe('');
+  });
+
+  it('keeps sync traffic out of the receive queue and aggregates reports', () => {
+    const session = new FakeSession();
+    const transport = {sendEvent: vi.fn()};
+    const extension = new WebRtcManualPairingExtension(
+      session,
+      new SyncService(transport, {nowUs: () => 3_000_000})
+    );
+
+    expect(
+      session.deliverInternal({
+        channel: syncChannel,
+        type: clockProbeSchema,
+        payload: createClockPing(1, 1_000_000)
+      })
+    ).toBe(true);
+    expect(transport.sendEvent).toHaveBeenCalledWith(
+      'peer-a',
+      clockProbeSchema,
+      expect.stringContaining('"kind":"pong"'),
+      syncChannel
+    );
+    expect(session.deliverInternal({channel: 'default', type: 'door-open'})).toBe(false);
+
+    for (const [cameraId, median] of [
+      ['camera-1', 40],
+      ['camera-2', 60]
+    ] as const) {
+      session.deliverInternal({
+        peer: `peer-${cameraId}`,
+        channel: syncChannel,
+        type: frameSyncReportSchema,
+        payload: {
+          schema: frameSyncReportSchema,
+          version: frameSyncReportVersion,
+          cameraId,
+          referencePeer: 'host',
+          measuredAtUs: 1_000,
+          latencyUs: {
+            count: 4,
+            min: median - 2,
+            p10: median - 2,
+            median,
+            p90: median + 2,
+            max: median + 2,
+            mean: median,
+            mad: 1,
+            stddev: 1
+          },
+          clock: null
+        }
+      });
+    }
+
+    expect(JSON.parse(extension.frameSyncCameras())).toEqual(['camera-1', 'camera-2']);
+    expect(extension.frameSyncLatencyOfCamera({CAMERA: 'camera-1'})).toBe(40);
+    expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-1'})).toBe(-10);
+    expect(extension.frameSyncOffsetOfCamera({CAMERA: 'camera-2'})).toBe(10);
+    expect(JSON.parse(extension.frameSyncReport())).toMatchObject({referenceLatencyUs: 50});
+
+    extension.clearFrameSyncReport();
+    expect(JSON.parse(extension.frameSyncReport())).toEqual({
+      referenceLatencyUs: 0,
+      cameras: []
+    });
   });
 });
