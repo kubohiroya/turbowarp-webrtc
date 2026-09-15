@@ -80,7 +80,21 @@ Both peers must run `set latest-data channels enabled [true]` before pairing. Be
 
 `send latest data` never waits for the network. When `bufferedAmount` is greater than the configured high-water mark, the new value is dropped (`drop-newest`) and the drop counter increases. Use the state, buffered-byte, sent-count, and dropped-count reporters for diagnostics. Disabling the feature immediately closes latest-data channels while leaving the control channel available; re-pair to enable them again.
 
-Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCapability`. Its current `version` is `2`. Version 1 consumers remain compatible through `requireVersion(1)`. Version 2 consumers call `requireVersion(2)` and can additionally use `createOffer(peer)` and `getOffer(peer)` to create and render manual-pairing offers without duplicating transport state. Other versions throw an explicit error. The capability also provides the block-equivalent latest-data opt-in, configuration, send, and statistics operations and is removed when this extension is disposed.
+Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCapability`. Its current `version` is `3`, and `requireVersion(1)`, `requireVersion(2)` and `requireVersion(3)` all succeed; any other version throws an explicit error. The capability is removed when this extension is disposed.
+
+| Version | Adds |
+|---|---|
+| 1 | Latest-data opt-in, configuration, send and statistics, equivalent to the blocks |
+| 2 | `createOffer(peer)` and `getOffer(peer)`, so an offer can be produced without duplicating transport state |
+| 3 | `acceptOffer(peer, code)`, `getAnswer(peer)`, `acceptAnswer(peer, code)`, `connectionState(peer)`, `hasPeer(peer)` and `closePeer(peer)` |
+
+Version 2 could produce an offer but not accept one, so a consumer could not complete an exchange on its own. Version 3 closes that gap: `acceptOffer` returns the answer code, and `connectionState` reports the same value as the `connection state of [PEER]` block.
+
+`connectionState` returns `'closed'` both for a peer that closed and for one that was never created, so poll `hasPeer` alongside it when waiting for a connection to come up; otherwise the state before the first `createOffer` looks like a failure.
+
+`closePeer` closes a connection that another extension may be driving. Call it as an explicit action, never as incidental cleanup.
+
+Peer names are normalized the same way as in the blocks: surrounding spaces are removed and an empty name becomes `peer`. A capability caller and a block therefore reach the same connection for the same name.
 
 ## Frame sync measurement
 

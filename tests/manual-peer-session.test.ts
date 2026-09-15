@@ -224,3 +224,33 @@ describe('ManualPeerSession latest-data channels', () => {
     expect(session.connectionState('camera')).toBe('closed');
   });
 });
+
+describe('ManualPeerSession peer lifecycle', () => {
+  it('reports whether a peer exists separately from its connection state', async () => {
+    const {session} = sessionHarness();
+
+    // Both a peer that was never created and one that closed report 'closed',
+    // so hasPeer is what tells them apart.
+    expect(session.hasPeer('camera')).toBe(false);
+    expect(session.connectionState('camera')).toBe('closed');
+
+    await session.createOffer('camera');
+    expect(session.hasPeer('camera')).toBe(true);
+    expect(session.connectionState('camera')).toBe('connected');
+
+    session.closePeer('camera');
+    expect(session.hasPeer('camera')).toBe(false);
+    expect(session.connectionState('camera')).toBe('closed');
+  });
+
+  it('resolves the same peer for every lookup regardless of surrounding spaces', async () => {
+    const {session} = sessionHarness();
+
+    await session.createOffer('  camera  ');
+
+    expect(session.hasPeer('camera')).toBe(true);
+    expect(session.getOffer('  camera  ')).toBe(session.getOffer('camera'));
+    expect(session.getOffer('camera')).not.toBe('');
+    expect(session.connectionState(' camera ')).toBe('connected');
+  });
+});
