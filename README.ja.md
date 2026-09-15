@@ -27,8 +27,20 @@ LAN modeはpublic STUN serverを使わず、同じ部屋・同一LAN内の配置
 ローカルビルドではpackageをinstallします。
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.3.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.4.0
 ```
+
+### wire formatの共有
+
+このpackageは2つの面を持つ。拡張本体はURLで読み込む上記のbundle。それが通信路に載せる契約は sub-entry としても公開しており、他のpackageが定義を複製せずに読み書きできる。
+
+```ts
+import {parseFrameSyncReport, type ClockQuality} from '@kubohiroya/turbowarp-webrtc/sync';
+```
+
+sub-entryは型定義つきのコンパイル済みJavaScriptで、importゼロ・ブラウザ依存ゼロのsourceから生成している。利用側がbundlerを通しても素のNodeで実行しても動き、拡張本体を引き込まない。**importしても、実行時に拡張が読み込まれている必要はない。** 書式だけが必要なpackageは、WebRTCの存在に依存せずにこれへ依存できる。
+
+既定entry（`.`）は意図的に用意していない。bundleはimportではなくURLで読み込むものであり、ここに生やすと、うっかりした bare import が拡張本体とTurboWarpへの登録呼び出しごと他人のビルドへ入ってしまう。
 
 TurboWarpへ読み込む場合は生成済みのunsandboxed bundle `dist/turbowarp-webrtc.js` を使います。
 
@@ -68,7 +80,21 @@ pairing前に両方のpeerで `set latest-data channels enabled [true]` を実�
 
 `send latest data` はnetworkを待ちません。`bufferedAmount` が設定したhigh-water markを超えている場合は、新しい値をdropする固定契約（`drop-newest`）でdrop countを増やします。診断にはstate、buffered byte、sent count、dropped countのreporterを使います。機能を無効にするとlatest-data channelだけを直ちに閉じ、control channelは継続します。再び有効にする場合はre-pairしてください。
 
-unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapability` を利用できます。現在の `version` は `2` です。version 1 consumerは `requireVersion(1)` により互換性を維持します。version 2 consumerは `requireVersion(2)` を呼び、追加の `createOffer(peer)` と `getOffer(peer)` を使ってtransport stateを重複管理せずにmanual-pairing offerを作成・表示できます。それ以外のversionは明示的なerrorになります。このcapabilityはblockと同じlatest-dataのopt-in、設定、送信、統計APIも提供し、このextensionのdispose時に削除されます。
+unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapability` を利用できます。現在の `version` は `3` で、`requireVersion(1)`、`requireVersion(2)`、`requireVersion(3)` のいずれも成功します。それ以外のversionは明示的なerrorになります。このcapabilityはこのextensionのdispose時に削除されます。
+
+| version | 追加されるもの |
+|---|---|
+| 1 | latest-dataのopt-in、設定、送信、統計。blockと同等 |
+| 2 | `createOffer(peer)` と `getOffer(peer)`。transport stateを重複管理せずにofferを作れる |
+| 3 | `acceptOffer(peer, code)`、`getAnswer(peer)`、`acceptAnswer(peer, code)`、`connectionState(peer)`、`hasPeer(peer)`、`closePeer(peer)` |
+
+version 2 はofferを作れても受理できないため、consumerが単独で交換を完結できませんでした。version 3 はそこを埋めます。`acceptOffer` はanswer codeを返し、`connectionState` は `connection state of [PEER]` blockと同じ値を返します。
+
+`connectionState` は、閉じたpeerと一度も作られていないpeerのどちらにも `'closed'` を返します。接続の成立を待つ間は `hasPeer` も併せて見てください。そうしないと、最初の `createOffer` より前の状態が失敗に見えます。
+
+`closePeer` は他のextensionが管理している接続を閉じることがあります。付随的な後始末としてではなく、明示的な操作としてのみ呼んでください。
+
+peer名はblockと同じ方法で正規化されます。前後の空白を取り除き、空の場合は `peer` になります。したがって、同じ名前ならcapability経由でもblock経由でも同じ接続に解決されます。
 
 ## Frame sync measurement
 

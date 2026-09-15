@@ -674,7 +674,7 @@
   		return code;
   	}
   	getOffer(peer) {
-  		return this.peers.get(peer)?.offerCode ?? "";
+  		return this.peers.get(peer.trim())?.offerCode ?? "";
   	}
   	async acceptOffer(peer, code) {
   		const offer = decodePairingCode(code);
@@ -689,7 +689,7 @@
   		return answerCode;
   	}
   	getAnswer(peer) {
-  		return this.peers.get(peer)?.answerCode ?? "";
+  		return this.peers.get(peer.trim())?.answerCode ?? "";
   	}
   	async acceptAnswer(peer, code) {
   		const answer = decodePairingCode(code);
@@ -773,6 +773,10 @@
   	}
   	connectionState(peer) {
   		return this.peers.get(peer.trim())?.connection.connectionState ?? "closed";
+  	}
+  	/** Distinguishes a peer that was never created from one that closed. */
+  	hasPeer(peer) {
+  		return this.peers.has(peer.trim());
   	}
   	connectedPeers() {
   		return [...this.peers.entries()].filter(([, record]) => record.connection.connectionState === "connected" && record.controlChannel?.readyState === "open").map(([peer]) => peer);
@@ -960,21 +964,39 @@
   	return Math.random().toString(36).slice(2);
   }
   var runtimeCapabilityKey = "kubohiroyaWebRtcCapability";
+  var supportedVersions = [
+  	1,
+  	2,
+  	3
+  ];
   function createRuntimeCapability(session) {
   	const capability = {
-  		version: 2,
+  		version: 3,
   		requireVersion(version) {
-  			if (version !== 1 && version !== 2) throw new Error(`Unsupported WebRTC runtime capability version: ${version}; supported versions are 1 and 2.`);
+  			if (!supportedVersions.includes(version)) throw new Error(`Unsupported WebRTC runtime capability version: ${version}; supported versions are ${supportedVersions.join(", ")}.`);
   			return capability;
   		},
-  		createOffer: (peer) => session.createOffer(peer),
-  		getOffer: (peer) => session.getOffer(peer),
+  		createOffer: (peer) => session.createOffer(normalizePeer(peer)),
+  		getOffer: (peer) => session.getOffer(normalizePeer(peer)),
+  		acceptOffer: (peer, code) => session.acceptOffer(normalizePeer(peer), code),
+  		getAnswer: (peer) => session.getAnswer(normalizePeer(peer)),
+  		acceptAnswer: (peer, code) => session.acceptAnswer(normalizePeer(peer), code),
+  		connectionState: (peer) => session.connectionState(normalizePeer(peer)),
+  		hasPeer: (peer) => session.hasPeer(normalizePeer(peer)),
+  		closePeer: (peer) => session.closePeer(normalizePeer(peer)),
   		setLatestDataEnabled: (enabled) => session.setLatestDataEnabled(enabled),
-  		configureLatestDataChannel: (peer, channel, highWaterMark) => session.configureLatestDataChannel(peer, channel, highWaterMark),
-  		sendLatestData: (peer, channel, payloadText) => session.sendLatestData(peer, channel, payloadText),
-  		latestDataStats: (peer, channel) => session.latestDataStats(peer, channel)
+  		configureLatestDataChannel: (peer, channel, highWaterMark) => session.configureLatestDataChannel(normalizePeer(peer), channel, highWaterMark),
+  		sendLatestData: (peer, channel, payloadText) => session.sendLatestData(normalizePeer(peer), channel, payloadText),
+  		latestDataStats: (peer, channel) => session.latestDataStats(normalizePeer(peer), channel)
   	};
   	return Object.freeze(capability);
+  }
+  /**
+  * Matches the block layer's peer normalization, so a capability caller and a
+  * block reach the same RTCPeerConnection for the same name.
+  */
+  function normalizePeer(peer) {
+  	return String(peer ?? "").trim() || "peer";
   }
   //#endregion
   //#region src/sync-protocol.ts
@@ -1630,7 +1652,7 @@
   		return "drop-newest";
   	}
   	runtimeCapabilityVersion() {
-  		return 2;
+  		return 3;
   	}
   	requireRuntimeCapabilityVersion(args) {
   		this.runtimeCapability.requireVersion(Scratch.Cast.toNumber(args.VERSION));

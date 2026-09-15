@@ -7,7 +7,7 @@ import type {
   LatestDataSendResult,
   MessageHandler
 } from '../src/manual-peer-session.js';
-import {runtimeCapabilityKey} from '../src/runtime-capability.js';
+import {runtimeCapabilityKey, type WebRtcRuntimeCapabilityV3} from '../src/runtime-capability.js';
 import {protocolVersion, type ReceivedEnvelope} from '../src/protocol.js';
 import {SyncService} from '../src/sync-service.js';
 import {
@@ -151,6 +151,10 @@ class FakeSession {
 
   public connectionState(peer: string): string {
     return peer === 'peer-a' ? 'connected' : 'closed';
+  }
+
+  public hasPeer(peer: string): boolean {
+    return peer === 'peer-a';
   }
 
   public connectedPeers(): string[] {
@@ -359,7 +363,7 @@ describe('WebRtcManualPairingExtension', () => {
     expect(extension.latestDataDroppedCount({PEER: 'peer-a', CHANNEL: 'pose'})).toBe(2);
     expect(extension.latestDataChannelState({PEER: 'peer-a', CHANNEL: 'pose'})).toBe('open');
     expect(extension.latestDataDropPolicy()).toBe('drop-newest');
-    expect(extension.runtimeCapabilityVersion()).toBe(2);
+    expect(extension.runtimeCapabilityVersion()).toBe(3);
     expect(session.calls).toEqual([
       'setLatestDataEnabled:true',
       'configureLatestDataChannel:peer-a:pose:1024',
@@ -367,32 +371,80 @@ describe('WebRtcManualPairingExtension', () => {
     ]);
   });
 
-  it('publishes a backward-compatible v2 runtime capability and cleans it up on dispose', async () => {
+  it('publishes a backward-compatible v3 runtime capability and cleans it up on dispose', async () => {
     const session = new FakeSession();
     const extension = new WebRtcManualPairingExtension(session);
     const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
-    const capability = runtime[runtimeCapabilityKey] as {
-      version: number;
-      requireVersion(version: number): unknown;
-      createOffer(peer: string): Promise<string>;
-      getOffer(peer: string): string;
-    };
+    const capability = runtime[runtimeCapabilityKey] as WebRtcRuntimeCapabilityV3;
 
-    expect(capability.version).toBe(2);
+    expect(capability.version).toBe(3);
     expect(capability.requireVersion(1)).toBe(capability);
     expect(capability.requireVersion(2)).toBe(capability);
+    expect(capability.requireVersion(3)).toBe(capability);
     await expect(capability.createOffer('peer-capability')).resolves.toBe('offer:peer-capability');
     expect(capability.getOffer('peer-capability')).toBe('offer:peer-capability');
-    expect(() => capability.requireVersion(3)).toThrow(
+    expect(() => capability.requireVersion(4)).toThrow(
       'Unsupported WebRTC runtime capability version'
     );
-    expect(() => extension.requireRuntimeCapabilityVersion({VERSION: 3})).toThrow(
+    expect(() => extension.requireRuntimeCapabilityVersion({VERSION: 4})).toThrow(
       'Unsupported WebRTC runtime capability version'
     );
 
     extension.dispose();
     expect(session.calls).toContain('closeAll');
     expect(runtime[runtimeCapabilityKey]).toBeUndefined();
+  });
+
+  it('drives a whole offer and answer exchange through the capability', async () => {
+    const session = new FakeSession();
+    new WebRtcManualPairingExtension(session);
+    const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
+    const capability = runtime[runtimeCapabilityKey] as WebRtcRuntimeCapabilityV3;
+
+    await expect(capability.acceptOffer('peer-a', 'offer-code')).resolves.toBe('answer:peer-a');
+    expect(capability.getAnswer('peer-a')).toBe('answer:peer-a');
+    await expect(capability.acceptAnswer('peer-a', 'answer-code')).resolves.toBeUndefined();
+    expect(capability.connectionState('peer-a')).toBe('connected');
+    expect(capability.hasPeer('peer-a')).toBe(true);
+    capability.closePeer('peer-a');
+
+    expect(session.calls).toEqual([
+      'acceptOffer:peer-a:offer-code',
+      'acceptAnswer:peer-a:answer-code',
+      'closePeer:peer-a'
+    ]);
+  });
+
+  it('separates a peer that never existed from one that closed', () => {
+    const session = new FakeSession();
+    new WebRtcManualPairingExtension(session);
+    const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
+    const capability = runtime[runtimeCapabilityKey] as WebRtcRuntimeCapabilityV3;
+
+    // connectionState reports 'closed' for both cases, so polling for an
+    // established connection needs hasPeer to tell them apart.
+    expect(capability.connectionState('never-created')).toBe('closed');
+    expect(capability.hasPeer('never-created')).toBe(false);
+    expect(capability.hasPeer('peer-a')).toBe(true);
+  });
+
+  it('resolves a peer name to the same connection from a block and from the capability', async () => {
+    const session = new FakeSession();
+    const extension = new WebRtcManualPairingExtension(session);
+    const runtime = Scratch.vm!.runtime! as Record<string, unknown>;
+    const capability = runtime[runtimeCapabilityKey] as WebRtcRuntimeCapabilityV3;
+
+    await extension.createOffer({PEER: '  spaced  '});
+    await capability.createOffer('  spaced  ');
+    await extension.createOffer({PEER: '   '});
+    await capability.createOffer('');
+
+    expect(session.calls).toEqual([
+      'createOffer:spaced',
+      'createOffer:spaced',
+      'createOffer:peer',
+      'createOffer:peer'
+    ]);
   });
 
   it('starts network message hats and exposes the received context', () => {

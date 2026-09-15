@@ -53,6 +53,7 @@ export interface PeerSessionPort {
   lastMessage(): string;
   clearMessages(): void;
   connectionState(peer: string): string;
+  hasPeer(peer: string): boolean;
   connectedPeers(): string[];
   closePeer(peer: string): void;
   closeAll(): void;
@@ -130,7 +131,7 @@ export class ManualPeerSession implements PeerSessionPort {
   }
 
   public getOffer(peer: string): string {
-    return this.peers.get(peer)?.offerCode ?? '';
+    return this.peers.get(peer.trim())?.offerCode ?? '';
   }
 
   public async acceptOffer(peer: string, code: string): Promise<string> {
@@ -149,7 +150,7 @@ export class ManualPeerSession implements PeerSessionPort {
   }
 
   public getAnswer(peer: string): string {
-    return this.peers.get(peer)?.answerCode ?? '';
+    return this.peers.get(peer.trim())?.answerCode ?? '';
   }
 
   public async acceptAnswer(peer: string, code: string): Promise<void> {
@@ -256,6 +257,11 @@ export class ManualPeerSession implements PeerSessionPort {
 
   public connectionState(peer: string): string {
     return this.peers.get(peer.trim())?.connection.connectionState ?? 'closed';
+  }
+
+  /** Distinguishes a peer that was never created from one that closed. */
+  public hasPeer(peer: string): boolean {
+    return this.peers.has(peer.trim());
   }
 
   public connectedPeers(): string[] {
