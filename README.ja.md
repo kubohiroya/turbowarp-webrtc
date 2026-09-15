@@ -74,7 +74,7 @@ unsandboxedなcomposite extensionは `Scratch.vm.runtime.kubohiroyaWebRtcCapabil
 
 同じ被写体を撮る複数台のPCは、同じ瞬間にフレームを記録し終えるわけではありません。これらのblockはその差を計測し、複数PCで撮ったデータを1本の時間軸に載せられるようにします。
 
-計測には「表示された時刻そのものを符号化した画面」が必要です。1台のPCがそのパターンを表示し、プロジェクタで各カメラの視野に投影し、カメラ側の各PCが自分のフレームからパターンを復号します。パターンの表示と復号はアプリケーション側の関心事で、[multiview-pose](https://github.com/kubohiroya/multiview-pose/issues/8) のアプリで実装します。この拡張は、その観測値を比較可能な数値に変えるためのclock probeとレポート経路を提供します。
+計測には「表示された時刻そのものを符号化した画面」が必要です。1台のPCがそのパターンを表示し、プロジェクタで各カメラの視野に投影し、カメラ側の各PCが自分のフレームからパターンを復号します。パターンの表示と復号はアプリケーション側の関心事で、[turbowarp-realtime-motion-capture-app](https://github.com/kubohiroya/turbowarp-realtime-motion-capture-app/issues/8) のアプリで実装します。この拡張は、その観測値を比較可能な数値に変えるためのclock probeとレポート経路を提供します。
 
 これらのblockが受け取る・返す時刻と時間はすべて**マイクロ秒**です。`twmp/clock-probe` 契約およびpose frameのcapture timestampと同じ単位なので、同じ値を単位変換なしで両方の拡張へ渡せます。
 

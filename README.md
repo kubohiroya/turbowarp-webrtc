@@ -74,7 +74,7 @@ Composite unsandboxed extensions can use `Scratch.vm.runtime.kubohiroyaWebRtcCap
 
 Computers that film the same subject do not finish recording a frame at the same moment. These blocks measure that difference so that data captured on several computers can be placed on one timeline.
 
-The measurement needs a display whose content encodes the time at which it was shown. One computer shows that pattern, a projector puts it in front of every camera, and each camera computer decodes the pattern out of its own frames. Showing the pattern and decoding it are application concerns and live in the [multiview-pose](https://github.com/kubohiroya/multiview-pose/issues/8) applications; this extension provides the clock probe and the reporting path that turn those observations into comparable numbers.
+The measurement needs a display whose content encodes the time at which it was shown. One computer shows that pattern, a projector puts it in front of every camera, and each camera computer decodes the pattern out of its own frames. Showing the pattern and decoding it are application concerns and live in the [turbowarp-realtime-motion-capture-app](https://github.com/kubohiroya/turbowarp-realtime-motion-capture-app/issues/8) applications; this extension provides the clock probe and the reporting path that turn those observations into comparable numbers.
 
 Every timestamp and duration these blocks accept or return is in **microseconds**, matching the `twmp/clock-probe` contract and the pose frame capture timestamp, so the same value can be passed to both extensions without conversion.
 
