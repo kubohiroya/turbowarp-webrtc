@@ -2,7 +2,7 @@
  * Wire contracts shared by the clock probe and the frame sync report.
  *
  * The clock probe payload mirrors the `twmp/clock-probe` version 1 contract
- * published by the multiview-pose protocol package: integer microsecond
+ * defined by the turbowarp-realtime-motion-capture-app protocol: integer microsecond
  * timestamps, a monotonically increasing sequence number, and no extra
  * properties. Frame sync reports use the same style so that they can be
  * promoted to a versioned schema without changing the runtime code.
