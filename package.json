@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-webrtc",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Manual WebRTC DataChannel pairing for TurboWarp extensions.",
   "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
   "license": "MPL-2.0",
@@ -21,6 +21,17 @@
     "manual-pairing"
   ],
   "type": "module",
+  "exports": {
+    "./sync": {
+      "types": "./dist/sync-protocol.d.ts",
+      "default": "./dist/sync-protocol.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "src/index.ts",
+    "dist/*"
+  ],
   "files": [
     "dist/",
     "schemas/",
@@ -39,7 +50,7 @@
   "scripts": {
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "build": "vite build",
+    "build": "vite build && tsc -p tsconfig.sync.json",
     "lint": "eslint src tests scripts vite.config.ts",
     "format": "prettier --write src/extension.ts src/feature-flags.ts src/manual-peer-session.ts src/runtime-capability.ts tests/extension.test.ts tests/manual-peer-session.test.ts",
     "format:check": "prettier --check src/extension.ts src/feature-flags.ts src/manual-peer-session.ts src/runtime-capability.ts tests/extension.test.ts tests/manual-peer-session.test.ts",

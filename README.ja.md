@@ -27,8 +27,20 @@ LAN modeはpublic STUN serverを使わず、同じ部屋・同一LAN内の配置
 ローカルビルドではpackageをinstallします。
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.3.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.4.0
 ```
+
+### wire formatの共有
+
+このpackageは2つの面を持つ。拡張本体はURLで読み込む上記のbundle。それが通信路に載せる契約は sub-entry としても公開しており、他のpackageが定義を複製せずに読み書きできる。
+
+```ts
+import {parseFrameSyncReport, type ClockQuality} from '@kubohiroya/turbowarp-webrtc/sync';
+```
+
+sub-entryは型定義つきのコンパイル済みJavaScriptで、importゼロ・ブラウザ依存ゼロのsourceから生成している。利用側がbundlerを通しても素のNodeで実行しても動き、拡張本体を引き込まない。**importしても、実行時に拡張が読み込まれている必要はない。** 書式だけが必要なpackageは、WebRTCの存在に依存せずにこれへ依存できる。
+
+既定entry（`.`）は意図的に用意していない。bundleはimportではなくURLで読み込むものであり、ここに生やすと、うっかりした bare import が拡張本体とTurboWarpへの登録呼び出しごと他人のビルドへ入ってしまう。
 
 TurboWarpへ読み込む場合は生成済みのunsandboxed bundle `dist/turbowarp-webrtc.js` を使います。
 

@@ -27,10 +27,22 @@ LAN mode avoids public STUN servers and is the default for local-room deployment
 Install the package for local builds:
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.3.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.4.0
 ```
 
 Use the generated unsandboxed bundle from `dist/turbowarp-webrtc.js` when loading the extension into TurboWarp.
+
+### Sharing the wire format
+
+The package has two faces. The extension itself is the bundle above, loaded by URL. The contracts it puts on the wire are also published as a sub-entry, so another package can read and write them without copying the definitions:
+
+```ts
+import {parseFrameSyncReport, type ClockQuality} from '@kubohiroya/turbowarp-webrtc/sync';
+```
+
+The sub-entry is compiled JavaScript with type declarations, built from a source file that has no imports and reaches for nothing a browser has to provide. It works whether the consumer bundles or runs it directly under Node, and it does not drag in the extension. **Importing it does not require the extension to be loaded at runtime**; a package that only needs the format can depend on this without depending on WebRTC being present.
+
+There is deliberately no default entry: the bundle is loaded by URL rather than imported, and exposing it here would let a stray bare import pull the whole extension, and the call that registers it with TurboWarp, into someone else's build.
 
 ## Quick start
 
