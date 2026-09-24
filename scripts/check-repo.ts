@@ -123,7 +123,7 @@ function checkPackageMetadata() {
   if (packageMetadata.bugs?.url !== 'https://github.com/kubohiroya/turbowarp-webrtc/issues') {
     errors.push('package.json bugs.url must point to the current issue tracker');
   }
-  for (const file of ['dist/', 'schemas/', 'README.md', 'README.ja.md', 'LICENSE']) {
+  for (const file of ['dist/', 'README.md', 'README.ja.md', 'LICENSE']) {
     if (!packageMetadata.files?.includes(file)) {
       errors.push(`package.json files must include ${file}`);
     }

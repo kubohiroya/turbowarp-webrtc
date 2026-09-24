@@ -20,8 +20,7 @@
     "dist/turbowarp-webrtc.js",
     "dist/extension-manifest.json",
     "dist/sync-protocol.js",
-    "dist/sync-protocol.d.ts",
-    "schemas/extension-manifest.schema.json"
+    "dist/sync-protocol.d.ts"
   ],
   "runtimeBehaviorGuard": {
     "extensionId": "kubohiroyawebrtc",
