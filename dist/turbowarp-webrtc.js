@@ -1601,6 +1601,7 @@
   	getInfo() {
   		return {
   			id: extensionConfig.id,
+  			docsURI: "https://kubohiroya.github.io/turbowarp-webrtc/",
   			name: Scratch.translate(block_definitions_default.extensionName),
   			blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
   			menus: block_definitions_default.menus
