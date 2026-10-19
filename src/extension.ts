@@ -1,3 +1,4 @@
+import {registerFixedInputEditors} from './fixed-input-editors.js';
 import {extensionConfig} from './config.js';
 import definitions from './block-definitions.json';
 import {defaultFeatureFlags} from './feature-flags.js';
@@ -34,6 +35,8 @@ const networkMessageHatOpcode = `${extensionConfig.id}_whenReceiveNetworkMessage
 const networkMessageThreadContextKey = '__turbowarpWebRtcNetworkMessage';
 
 export class WebRtcManualPairingExtension implements TurboWarpExtension {
+  private fixedEditorsDispose: (() => void) | undefined;
+
   private readonly session: PeerSessionPort;
   private readonly sync: SyncService;
   private readonly runtimeCapability: WebRtcRuntimeCapabilityV2;
@@ -55,13 +58,15 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
   }
 
   public getInfo(): Record<string, unknown> {
-    return {
+    const info = {
       id: extensionConfig.id,
       docsURI: 'https://kubohiroya.github.io/turbowarp-webrtc/',
       name: Scratch.translate(definitions.extensionName),
       blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
       menus: definitions.menus
     };
+    this.fixedEditorsDispose ??= registerFixedInputEditors(Scratch, (Scratch as unknown as {vm?: {runtime?: unknown}}).vm?.runtime, info.blocks);
+    return info;
   }
 
   public setIceMode(args: {MODE: unknown}): void {
@@ -313,6 +318,7 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
   }
 
   public dispose(): void {
+    this.fixedEditorsDispose?.();
     this.session.closeAll();
     const runtime = Scratch.vm?.runtime;
     if (runtime?.[runtimeCapabilityKey] === this.runtimeCapability) {

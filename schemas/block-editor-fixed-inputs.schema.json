@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kubohiroya.github.io/turbowarp-webrtc/schemas/block-editor-fixed-inputs.schema.json",
+  "title": "turbowarp-webrtc fixed editing contracts",
+  "$defs": {
+    "setIceMode": {
+      "type": "object",
+      "properties": {
+        "MODE": {
+          "type": "string",
+          "enum": ["lan", "stun"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "configureLatestDataChannel": {
+      "type": "object",
+      "properties": {
+        "HIGH_WATER_MARK": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "requireRuntimeCapabilityVersion": {
+      "type": "object",
+      "properties": {
+        "VERSION": {
+          "type": "number",
+          "enum": [1, 2, 3]
+        }
+      },
+      "additionalProperties": false
+    },
+    "frameLatency": {
+      "type": "object",
+      "properties": {
+        "CAPTURE_US": {
+          "type": "number"
+        },
+        "PATTERN_US": {
+          "type": "number"
+        },
+        "WRAP_US": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "recordFrameSyncSample": {
+      "type": "object",
+      "properties": {
+        "CAPTURE_US": {
+          "type": "number"
+        },
+        "PATTERN_US": {
+          "type": "number"
+        },
+        "WRAP_US": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
