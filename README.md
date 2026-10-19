@@ -27,7 +27,7 @@ LAN mode avoids public STUN servers and is the default for local-room deployment
 Install the package for local builds:
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.4.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.4.1
 ```
 
 Use the generated unsandboxed bundle from `dist/turbowarp-webrtc.js` when loading the extension into TurboWarp.
@@ -695,3 +695,15 @@ Run `pnpm run release:check` before publishing. It runs the full check suite, ve
 SPDX-License-Identifier: MPL-2.0
 
 This project is licensed under the Mozilla Public License 2.0. See [LICENSE](LICENSE).
+
+## Fixed input editing
+
+With a compatible TurboWarp GUI, enable fixed-input forms to edit only standard literal fields. Numbers use complete finite JSON number tokens; menu fields use existing choices. Connected reporters and unavailable fields stay read-only and are never evaluated. Saving an unchanged form preserves exact existing raw values, including legacy spellings and unknown choices. Invalid drafts stay in the same editing session; cancel, project/target replacement, or block removal discards them. Disabling the GUI feature flag restores native field editing. This form does not run blocks, open network/audio/key/QR sessions, resolve names, or edit Schema arguments. VERSION stays a numeric field restricted to 1, 2, or 3. ENABLED is a Boolean socket and is not a save target. Timestamp/wrap sentinels and high-water-mark runtime clamping remain unchanged.
+
+Canonical contracts: `schemas/block-editor-fixed-inputs.schema.json`; codecs and optional registration: `src/fixed-input-editors.ts`. These contracts describe new fixed-field candidates; they do not redefine all runtime data. The GUI integration is optional and existing standalone/composition APIs stay available.
+
+- `setIceMode`: MODE — [block documentation](https://kubohiroya.github.io/turbowarp-webrtc/#block-setIceMode).
+- `configureLatestDataChannel`: HIGH_WATER_MARK — [block documentation](https://kubohiroya.github.io/turbowarp-webrtc/#block-configureLatestDataChannel).
+- `requireRuntimeCapabilityVersion`: VERSION — [block documentation](https://kubohiroya.github.io/turbowarp-webrtc/#block-requireRuntimeCapabilityVersion).
+- `frameLatency`: CAPTURE_US, PATTERN_US, WRAP_US — [block documentation](https://kubohiroya.github.io/turbowarp-webrtc/#block-frameLatency).
+- `recordFrameSyncSample`: CAPTURE_US, PATTERN_US, WRAP_US — [block documentation](https://kubohiroya.github.io/turbowarp-webrtc/#block-recordFrameSyncSample).

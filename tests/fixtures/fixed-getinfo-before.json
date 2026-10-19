@@ -1,0 +1,563 @@
+{
+  "id": "kubohiroyawebrtc",
+  "docsURI": "https://kubohiroya.github.io/turbowarp-webrtc/",
+  "name": "WebRTC Manual Pairing",
+  "blocks": [
+    {
+      "opcode": "setIceMode",
+      "blockType": "command",
+      "text": "set ICE mode [MODE]",
+      "arguments": {
+        "MODE": {
+          "type": "string",
+          "defaultValue": "lan"
+        }
+      }
+    },
+    {
+      "opcode": "createOffer",
+      "blockType": "command",
+      "text": "create offer code for peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "getOffer",
+      "blockType": "reporter",
+      "text": "offer code for peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "acceptOffer",
+      "blockType": "command",
+      "text": "accept offer code [CODE] as peer [PEER]",
+      "arguments": {
+        "CODE": {
+          "type": "string",
+          "defaultValue": "offer-code"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "getAnswer",
+      "blockType": "reporter",
+      "text": "answer code for peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "acceptAnswer",
+      "blockType": "command",
+      "text": "accept answer code [CODE] for peer [PEER]",
+      "arguments": {
+        "CODE": {
+          "type": "string",
+          "defaultValue": "answer-code"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "sendEvent",
+      "blockType": "command",
+      "text": "send event [TYPE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "arguments": {
+        "TYPE": {
+          "type": "string",
+          "defaultValue": "door-open"
+        },
+        "PAYLOAD": {
+          "type": "string",
+          "defaultValue": "{}"
+        },
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "default"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "*"
+        }
+      }
+    },
+    {
+      "opcode": "setLatestDataEnabled",
+      "blockType": "command",
+      "text": "set latest-data channels enabled [ENABLED]",
+      "arguments": {
+        "ENABLED": {
+          "type": "Boolean",
+          "defaultValue": false
+        }
+      }
+    },
+    {
+      "opcode": "configureLatestDataChannel",
+      "blockType": "command",
+      "text": "configure latest-data channel [CHANNEL] high-water mark [HIGH_WATER_MARK] bytes for peer [PEER]",
+      "arguments": {
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "HIGH_WATER_MARK": {
+          "type": "number",
+          "defaultValue": 262144
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "sendLatestData",
+      "blockType": "command",
+      "text": "send latest data [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "arguments": {
+        "PAYLOAD": {
+          "type": "string",
+          "defaultValue": "{}"
+        },
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "latestDataBufferedAmount",
+      "blockType": "reporter",
+      "text": "latest-data buffered bytes for channel [CHANNEL] peer [PEER]",
+      "arguments": {
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "latestDataSentCount",
+      "blockType": "reporter",
+      "text": "latest-data sent count for channel [CHANNEL] peer [PEER]",
+      "arguments": {
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "latestDataDroppedCount",
+      "blockType": "reporter",
+      "text": "latest-data dropped count for channel [CHANNEL] peer [PEER]",
+      "arguments": {
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "latestDataChannelState",
+      "blockType": "reporter",
+      "text": "latest-data state for channel [CHANNEL] peer [PEER]",
+      "arguments": {
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "pose"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "latestDataDropPolicy",
+      "blockType": "reporter",
+      "text": "latest-data drop policy",
+      "arguments": {}
+    },
+    {
+      "opcode": "runtimeCapabilityVersion",
+      "blockType": "reporter",
+      "text": "WebRTC runtime capability version",
+      "arguments": {}
+    },
+    {
+      "opcode": "requireRuntimeCapabilityVersion",
+      "blockType": "command",
+      "text": "require WebRTC runtime capability version [VERSION]",
+      "arguments": {
+        "VERSION": {
+          "type": "number",
+          "defaultValue": 2
+        }
+      }
+    },
+    {
+      "opcode": "broadcastNetworkMessage",
+      "blockType": "command",
+      "text": "broadcast network message [MESSAGE] payload [PAYLOAD] channel [CHANNEL] to peer [PEER]",
+      "arguments": {
+        "MESSAGE": {
+          "type": "string",
+          "defaultValue": "door-open"
+        },
+        "PAYLOAD": {
+          "type": "string",
+          "defaultValue": "{}"
+        },
+        "CHANNEL": {
+          "type": "string",
+          "defaultValue": "default"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "*"
+        }
+      }
+    },
+    {
+      "opcode": "whenReceiveNetworkMessage",
+      "blockType": "event",
+      "text": "when I receive network message [MESSAGE]",
+      "isEdgeActivated": false,
+      "arguments": {
+        "MESSAGE": {
+          "type": "string",
+          "defaultValue": "door-open",
+          "menu": "networkMessages"
+        }
+      }
+    },
+    {
+      "opcode": "networkMessagePayload",
+      "blockType": "reporter",
+      "text": "network message payload",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessageSender",
+      "blockType": "reporter",
+      "text": "network message sender",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessagePeer",
+      "blockType": "reporter",
+      "text": "network message peer",
+      "arguments": {}
+    },
+    {
+      "opcode": "networkMessageChannel",
+      "blockType": "reporter",
+      "text": "network message channel",
+      "arguments": {}
+    },
+    {
+      "opcode": "hasMessages",
+      "blockType": "Boolean",
+      "text": "has received messages?",
+      "arguments": {}
+    },
+    {
+      "opcode": "messageCount",
+      "blockType": "reporter",
+      "text": "received message count",
+      "arguments": {}
+    },
+    {
+      "opcode": "nextMessage",
+      "blockType": "reporter",
+      "text": "next received message",
+      "arguments": {}
+    },
+    {
+      "opcode": "lastMessage",
+      "blockType": "reporter",
+      "text": "last received message",
+      "arguments": {}
+    },
+    {
+      "opcode": "clearMessages",
+      "blockType": "command",
+      "text": "clear received messages",
+      "arguments": {}
+    },
+    {
+      "opcode": "connectionState",
+      "blockType": "reporter",
+      "text": "connection state of peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "connectedPeers",
+      "blockType": "reporter",
+      "text": "connected peers",
+      "arguments": {}
+    },
+    {
+      "opcode": "closePeer",
+      "blockType": "command",
+      "text": "close peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "syncClock",
+      "blockType": "command",
+      "text": "sync clock with peer [PEER]",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "clockOffset",
+      "blockType": "reporter",
+      "text": "clock offset to peer [PEER] us",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "clockRoundTrip",
+      "blockType": "reporter",
+      "text": "clock round trip to peer [PEER] us",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "clockUncertainty",
+      "blockType": "reporter",
+      "text": "clock uncertainty to peer [PEER] us",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "peerTime",
+      "blockType": "reporter",
+      "text": "time in clock of peer [PEER] us",
+      "arguments": {
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "localTime",
+      "blockType": "reporter",
+      "text": "local time us",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameLatency",
+      "blockType": "reporter",
+      "text": "frame latency us for capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
+      "arguments": {
+        "CAPTURE_US": {
+          "type": "number",
+          "defaultValue": "0"
+        },
+        "PATTERN_US": {
+          "type": "number",
+          "defaultValue": "0"
+        },
+        "WRAP_US": {
+          "type": "number",
+          "defaultValue": "4096000"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "recordFrameSyncSample",
+      "blockType": "command",
+      "text": "record frame sync sample for camera [CAMERA] capture [CAPTURE_US] pattern [PATTERN_US] wrap [WRAP_US] from peer [PEER]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        },
+        "CAPTURE_US": {
+          "type": "number",
+          "defaultValue": "0"
+        },
+        "PATTERN_US": {
+          "type": "number",
+          "defaultValue": "0"
+        },
+        "WRAP_US": {
+          "type": "number",
+          "defaultValue": "4096000"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "clearFrameSyncSamples",
+      "blockType": "command",
+      "text": "clear frame sync samples for camera [CAMERA]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        }
+      }
+    },
+    {
+      "opcode": "frameSyncSampleCount",
+      "blockType": "reporter",
+      "text": "frame sync sample count for camera [CAMERA]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        }
+      }
+    },
+    {
+      "opcode": "frameSyncSummary",
+      "blockType": "reporter",
+      "text": "frame sync summary for camera [CAMERA]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        }
+      }
+    },
+    {
+      "opcode": "sendFrameSyncReport",
+      "blockType": "command",
+      "text": "send frame sync report for camera [CAMERA] to peer [PEER]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        },
+        "PEER": {
+          "type": "string",
+          "defaultValue": "peer-a"
+        }
+      }
+    },
+    {
+      "opcode": "frameSyncReport",
+      "blockType": "reporter",
+      "text": "frame sync report",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameSyncCameras",
+      "blockType": "reporter",
+      "text": "frame sync cameras",
+      "arguments": {}
+    },
+    {
+      "opcode": "frameSyncLatencyOfCamera",
+      "blockType": "reporter",
+      "text": "frame sync latency us of camera [CAMERA]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        }
+      }
+    },
+    {
+      "opcode": "frameSyncOffsetOfCamera",
+      "blockType": "reporter",
+      "text": "frame sync offset us of camera [CAMERA]",
+      "arguments": {
+        "CAMERA": {
+          "type": "string",
+          "defaultValue": "camera-1"
+        }
+      }
+    },
+    {
+      "opcode": "clearFrameSyncReport",
+      "blockType": "command",
+      "text": "clear frame sync report",
+      "arguments": {}
+    }
+  ],
+  "menus": {
+    "networkMessages": {
+      "acceptReporters": false,
+      "items": [
+        "door-open",
+        "event",
+        "*"
+      ]
+    }
+  }
+}
