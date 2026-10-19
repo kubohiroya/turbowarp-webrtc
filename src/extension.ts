@@ -65,7 +65,11 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
       blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
       menus: definitions.menus
     };
-    this.fixedEditorsDispose ??= registerFixedInputEditors(Scratch, (Scratch as unknown as {vm?: {runtime?: unknown}}).vm?.runtime, info.blocks);
+    this.fixedEditorsDispose ??= registerFixedInputEditors(
+      Scratch,
+      (Scratch as unknown as {vm?: {runtime?: unknown}}).vm?.runtime,
+      info.blocks
+    );
     return info;
   }
 

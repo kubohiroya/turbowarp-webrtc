@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-webrtc",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Manual WebRTC DataChannel pairing for TurboWarp extensions.",
   "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
   "license": "MPL-2.0",
@@ -65,8 +65,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
-    "@kubohiroya/turbowarp-extension-manifest": "0.2.0",
-    "@kubohiroya/vite-plugin-turbowarp-extension": "0.4.0",
+    "@kubohiroya/turbowarp-extension-manifest": "0.3.2",
+    "@kubohiroya/vite-plugin-turbowarp-extension": "0.6.1",
     "@types/node": "^24.13.3",
     "eslint": "^9.39.5",
     "prettier": "^3.9.6",
@@ -74,6 +74,12 @@
     "typescript-eslint": "^8.66.0",
     "vite": "^8.2.2",
     "vitest": "^4.1.10",
-    "@kubohiroya/turbowarp-extension-data-editor": "github:kubohiroya/turbowarp-extension-data-editor#485f0e550e622235624b5e9176820161aeeba252"
+    "@kubohiroya/turbowarp-extension-data-editor": "0.2.1"
+  },
+  "gitHead": "5a60920855a6f35eddef618888706d08e1514375",
+  "x-turbowarp-source": {
+    "revision": "5a60920855a6f35eddef618888706d08e1514375",
+    "revisionRole": "base-commit",
+    "sourceState": "local-release-overlay"
   }
 }
