@@ -15,7 +15,8 @@
   	description: "Peer-to-peer DataChannel messaging for TurboWarp with manual pairing codes.",
   	author: "Hiroya Kubo",
   	license: "MPL-2.0",
-  	unsandboxed: true
+  	unsandboxed: true,
+  	blockIconURI: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIyNCIgcj0iNiIgZmlsbD0iIzRDOTdGRiIvPjxjaXJjbGUgY3g9IjM2IiBjeT0iMjQiIHI9IjYiIGZpbGw9IiM0Qzk3RkYiLz48cGF0aCBkPSJNMTggMjRoMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzU5QzA1OSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjQgMTlsNSA1LTUgNS01LTV6IiBmaWxsPSIjNTlDMDU5Ii8+PC9zdmc+"
   };
   var block_editor_fixed_inputs_schema_default = {
   	$schema: "http://json-schema.org/draft-07/schema#",
@@ -1802,6 +1803,7 @@
   		const info = {
   			id: extensionConfig.id,
   			docsURI: "https://kubohiroya.github.io/turbowarp-webrtc/",
+  			blockIconURI: extensionConfig.blockIconURI,
   			name: Scratch.translate(block_definitions_default.extensionName),
   			blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
   			menus: block_definitions_default.menus
