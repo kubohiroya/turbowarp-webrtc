@@ -33,6 +33,7 @@
     "dist/*"
   ],
   "files": [
+    "assets/",
     "dist/",
     "README.md",
     "README.ja.md",
