@@ -1,5 +1,7 @@
 # TurboWarp WebRTC
 
+<img src="assets/block-icon.svg" alt="" width="48" height="48">
+
 [English](README.md)
 
 TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM Kamishibaiやリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。

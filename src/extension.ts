@@ -61,6 +61,7 @@ export class WebRtcManualPairingExtension implements TurboWarpExtension {
     const info = {
       id: extensionConfig.id,
       docsURI: 'https://kubohiroya.github.io/turbowarp-webrtc/',
+      blockIconURI: extensionConfig.blockIconURI,
       name: Scratch.translate(definitions.extensionName),
       blocks: blockDefinitions.map((block) => this.toScratchBlock(block)),
       menus: definitions.menus
