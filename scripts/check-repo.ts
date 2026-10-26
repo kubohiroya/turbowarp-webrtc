@@ -114,8 +114,8 @@ function checkPackageMetadata() {
   if (!/^pnpm@\d+\.\d+\.\d+$/u.test(packageMetadata.packageManager ?? '')) {
     errors.push('package.json packageManager must pin an exact pnpm version');
   }
-  if (packageMetadata.engines?.node !== '>=22.18.0') {
-    errors.push('package.json engines.node must be >=22.18.0');
+  if (packageMetadata.engines?.node !== '>=24') {
+    errors.push('package.json engines.node must be >=24');
   }
   if (packageMetadata.repository?.url !== 'git+https://github.com/kubohiroya/turbowarp-webrtc.git') {
     errors.push('package.json repository.url must point to the current repository');

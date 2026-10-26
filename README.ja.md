@@ -681,6 +681,7 @@ Clears every received frame sync report.
 ## 開発
 
 ```sh
+npm install --global corepack@latest
 corepack enable
 pnpm install --frozen-lockfile
 pnpm run check
