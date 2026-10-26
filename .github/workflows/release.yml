@@ -1,17 +1,17 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
 
 permissions:
   contents: write
-  # The identity npm exchanges for a short-lived publishing credential.
-  id-token: write
 
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,15 +46,41 @@ jobs:
           files: |
             dist/turbowarp-webrtc.js
             turbowarp-webrtc.zip
-      - name: Use an npm that can publish without a stored token
-        # Trusted publishing needs npm 11.5.1 or newer, and Node 22 ships 10.
-        run: npm install -g npm@latest
-      - name: Publish to npm
-        # No token in this repository. The package's trusted publisher on
-        # npmjs.com names this repository and this workflow, and npm checks that
-        # instead; the credential it issues lives for the length of the job.
-        # Provenance is attached without asking.
-        #
-        # Runs last, so a failed check or a mismatched tag stops the release
-        # before anything reaches the registry, where it cannot be taken back.
-        run: npm publish --access public
+
+  publish-existing:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Install OIDC-capable npm
+        run: npm install --global npm@11.21.0
+      - name: Verify release artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          node --input-type=module -e "import fs from 'node:fs'; const p = JSON.parse(fs.readFileSync('package.json')); if (p.name !== '@kubohiroya/turbowarp-webrtc' || p.version !== '0.5.0') throw new Error('Main has advanced');"
+          gh release download v0.5.0 --repo kubohiroya/turbowarp-webrtc --pattern kubohiroya-turbowarp-webrtc-0.5.0.tgz
+          echo 'f993139a26b7d141eab6bfd49e3dc8c85270bfdb  kubohiroya-turbowarp-webrtc-0.5.0.tgz' | sha1sum --check
+          tar -xOf kubohiroya-turbowarp-webrtc-0.5.0.tgz package/package.json > package-metadata.json
+          node --input-type=module -e "import fs from 'node:fs'; const p = JSON.parse(fs.readFileSync('package-metadata.json')); if (p.name !== '@kubohiroya/turbowarp-webrtc' || p.version !== '0.5.0') throw new Error('Unexpected package');"
+      - name: Publish once with provenance and finalize tags
+        run: |
+          set -eu
+          npm view @kubohiroya/turbowarp-webrtc@0.5.0 --json --prefer-online > published.json 2> registry-error.txt || {
+            node --input-type=module -e "import fs from 'node:fs'; const p = JSON.parse(fs.readFileSync('published.json')); if (p.error?.code !== 'E404') throw new Error('Registry lookup failed');"
+            npm publish ./kubohiroya-turbowarp-webrtc-0.5.0.tgz --access public --provenance --tag latest --ignore-scripts
+          }
+          npm view @kubohiroya/turbowarp-webrtc@0.5.0 dist.shasum --json --prefer-online > visible-hash.json 2>/dev/null || true
+          node --input-type=module -e "import fs from 'node:fs'; const t=fs.readFileSync('visible-hash.json','utf8').trim(); if(t){ const p=JSON.parse(t); if(!p.error && p!=='f993139a26b7d141eab6bfd49e3dc8c85270bfdb') throw new Error('Published artifact differs'); if(p.error && p.error.code!=='E404') throw new Error('Registry lookup failed'); }"
+          node scripts/finalize-release-tags.ts @kubohiroya/turbowarp-webrtc 0.5.0
+          npm view @kubohiroya/turbowarp-webrtc@0.5.0 dist.shasum --json --prefer-online > published-hash.json
+          node --input-type=module -e "import fs from 'node:fs'; if (JSON.parse(fs.readFileSync('published-hash.json')) !== 'f993139a26b7d141eab6bfd49e3dc8c85270bfdb') throw new Error('Published artifact differs');"

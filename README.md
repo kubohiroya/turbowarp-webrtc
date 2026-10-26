@@ -29,7 +29,7 @@ LAN mode avoids public STUN servers and is the default for local-room deployment
 Install the package for local builds:
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.4.1
+pnpm add @kubohiroya/turbowarp-webrtc@0.5.0
 ```
 
 Use the generated unsandboxed bundle from `dist/turbowarp-webrtc.js` when loading the extension into TurboWarp.
