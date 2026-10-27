@@ -6,6 +6,18 @@
 
 TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TurboWarp Kamishibaiやリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。
 
+## 最小デモ
+
+[TurboWarp Editorで開く](https://turbowarp.org/editor?project_url=https%3A%2F%2Fkubohiroya.github.io%2Fturbowarp-webrtc%2Fsamples%2Ftwo-tab-ping.sb3) · [SB3をダウンロード](https://kubohiroya.github.io/turbowarp-webrtc/samples/two-tab-ping.sb3)
+
+緑旗で初期化。タブ1でO→signalをコピー、タブ2でA→貼り付け、タブ2のsignalをコピー、タブ1でF→貼り付け。Sでconnectedを確認してPでping、相手でRを押すと受信JSON。Xで切断。再度緑旗から再実行。
+
+要件: WebRTC DataChannel対応ブラウザの2タブ（または同一LANの2端末）。public STUN/TURNは使用しません。signal変数は非表示です。生成後にスクリプト内の `offer code for peer [peer]` / `answer code for peer [peer]` レポーターブロックをクリックし、結果の吹き出しからコードを選択してコピーしてください。接続記述を含むため信頼できる経路だけで交換してください。
+
+未検証: 実2端末・別ネットワーク/NAT/Firewall・長時間接続は未検証。
+
+[編集・再生成手順](samples/README.md)
+
 ## What it does
 
 - 常駐signalingサーバを置かない。
