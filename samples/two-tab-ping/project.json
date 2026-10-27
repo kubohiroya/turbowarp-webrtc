@@ -149,7 +149,7 @@
         },
         "b8": {
           "opcode": "data_setvariableto",
-          "next": null,
+          "next": "keep-running",
           "parent": "b7",
           "inputs": {
             "VALUE": [
@@ -682,7 +682,7 @@
         },
         "b38": {
           "opcode": "data_setvariableto",
-          "next": null,
+          "next": "stop-all",
           "parent": "b37",
           "inputs": {
             "VALUE": [
@@ -717,6 +717,51 @@
           "topLevel": true,
           "x": 860,
           "y": 570
+        },
+        "keep-running": {
+          "opcode": "control_forever",
+          "next": null,
+          "parent": "b8",
+          "inputs": {
+            "SUBSTACK": [
+              2,
+              "idle-wait"
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "idle-wait": {
+          "opcode": "control_wait",
+          "next": null,
+          "parent": "keep-running",
+          "inputs": {
+            "DURATION": [
+              1,
+              [
+                5,
+                "0.2"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "stop-all": {
+          "opcode": "control_stop",
+          "next": null,
+          "parent": "b38",
+          "inputs": {},
+          "fields": {
+            "STOP_OPTION": [
+              "all",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
         }
       },
       "comments": {},
