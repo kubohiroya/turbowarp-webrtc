@@ -4,7 +4,7 @@
 
 [English](README.md) | 日本語
 
-TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TM Kamishibaiやリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。
+TurboWarp向けの手動ペアリング型WebRTC DataChannel拡張です。TurboWarp Kamishibaiやリアル脱出ゲームのような、複数端末・物理イベント連携ランタイムの低レベル通信路として使うことを目的にしています。
 
 ## What it does
 

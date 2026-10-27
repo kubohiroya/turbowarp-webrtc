@@ -4,7 +4,7 @@
 
 English | [日本語](README.ja.md)
 
-Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as the low-level peer transport for TM Kamishibai and similar physical-event runtimes.
+Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as the low-level peer transport for TurboWarp Kamishibai and similar physical-event runtimes.
 
 ## What it does
 
