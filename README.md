@@ -6,6 +6,14 @@ English | [日本語](README.ja.md)
 
 Manual WebRTC DataChannel pairing for TurboWarp. This extension is intended as the low-level peer transport for TurboWarp Kamishibai and similar physical-event runtimes.
 
+## Minimal demo
+
+[TurboWarp Editor — open demo](https://turbowarp.org/editor?project_url=https%3A%2F%2Fkubohiroya.github.io%2Fturbowarp-webrtc%2Fsamples%2Ftwo-tab-ping.sb3) · [SB3 download](https://kubohiroya.github.io/turbowarp-webrtc/samples/two-tab-ping.sb3)
+
+Use two WebRTC-capable tabs or LAN devices. Green flag resets without connecting. Tab 1: O, click the offer-code reporter in the script and copy its result bubble. Tab 2: A, paste offer, click the answer-code reporter and copy its result bubble. Tab 1: F, paste answer. S reads connection; P sends ping; R reads received JSON; X closes. Exchange codes only over a trusted channel. No public STUN/TURN, camera or audio. Two physical devices, NAT/firewalls and long sessions remain unverified.
+
+[Editable sources and rebuild instructions](samples/README.md)
+
 ## What it does
 
 - No persistent signaling server.

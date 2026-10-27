@@ -1,0 +1,789 @@
+{
+  "targets": [
+    {
+      "isStage": true,
+      "name": "Stage",
+      "variables": {
+        "sample-state": [
+          "status",
+          "Ready"
+        ],
+        "signal": [
+          "offer / answer code",
+          ""
+        ],
+        "connection": [
+          "connection",
+          "closed"
+        ],
+        "message": [
+          "last received",
+          "(none)"
+        ]
+      },
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {
+        "b1": {
+          "opcode": "kubohiroyawebrtc_closePeer",
+          "next": "b2",
+          "parent": "b9",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b2": {
+          "opcode": "kubohiroyawebrtc_setIceMode",
+          "next": "b3",
+          "parent": "b1",
+          "inputs": {
+            "MODE": [
+              1,
+              [
+                10,
+                "lan"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b3": {
+          "opcode": "kubohiroyawebrtc_clearMessages",
+          "next": "b4",
+          "parent": "b2",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b4": {
+          "opcode": "data_setvariableto",
+          "next": "b6",
+          "parent": "b3",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "offer / answer code",
+              "signal"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b5": {
+          "opcode": "kubohiroyawebrtc_connectionState",
+          "next": null,
+          "parent": "b6",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b6": {
+          "opcode": "data_setvariableto",
+          "next": "b7",
+          "parent": "b4",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b5"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "connection",
+              "connection"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b7": {
+          "opcode": "data_setvariableto",
+          "next": "b8",
+          "parent": "b6",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "(none)"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "last received",
+              "message"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b8": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b7",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Ready"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "status",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b9": {
+          "opcode": "event_whenflagclicked",
+          "next": "b1",
+          "parent": null,
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": true,
+          "x": 300,
+          "y": 150
+        },
+        "b10": {
+          "opcode": "kubohiroyawebrtc_createOffer",
+          "next": "b12",
+          "parent": "b14",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b11": {
+          "opcode": "kubohiroyawebrtc_getOffer",
+          "next": null,
+          "parent": "b12",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b12": {
+          "opcode": "data_setvariableto",
+          "next": "b13",
+          "parent": "b10",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b11"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "offer / answer code",
+              "signal"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b13": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b12",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Offer ready; copy signal variable"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "status",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b14": {
+          "opcode": "event_whenkeypressed",
+          "next": "b10",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "o",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 580,
+          "y": 210
+        },
+        "b15": {
+          "opcode": "sensing_askandwait",
+          "next": "b17",
+          "parent": "b21",
+          "inputs": {
+            "QUESTION": [
+              1,
+              [
+                10,
+                "Paste offer code from other tab"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b16": {
+          "opcode": "sensing_answer",
+          "next": null,
+          "parent": "b17",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b17": {
+          "opcode": "kubohiroyawebrtc_acceptOffer",
+          "next": "b19",
+          "parent": "b15",
+          "inputs": {
+            "CODE": [
+              2,
+              "b16"
+            ],
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b18": {
+          "opcode": "kubohiroyawebrtc_getAnswer",
+          "next": null,
+          "parent": "b19",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b19": {
+          "opcode": "data_setvariableto",
+          "next": "b20",
+          "parent": "b17",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b18"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "offer / answer code",
+              "signal"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b20": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b19",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Answer ready; copy signal variable"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "status",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b21": {
+          "opcode": "event_whenkeypressed",
+          "next": "b15",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "a",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 300,
+          "y": 330
+        },
+        "b22": {
+          "opcode": "sensing_askandwait",
+          "next": "b24",
+          "parent": "b26",
+          "inputs": {
+            "QUESTION": [
+              1,
+              [
+                10,
+                "Paste answer code from other tab"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b23": {
+          "opcode": "sensing_answer",
+          "next": null,
+          "parent": "b24",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b24": {
+          "opcode": "kubohiroyawebrtc_acceptAnswer",
+          "next": "b25",
+          "parent": "b22",
+          "inputs": {
+            "CODE": [
+              2,
+              "b23"
+            ],
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b25": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b24",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Answer accepted; press S"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "status",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b26": {
+          "opcode": "event_whenkeypressed",
+          "next": "b22",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "f",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 580,
+          "y": 390
+        },
+        "b27": {
+          "opcode": "kubohiroyawebrtc_connectionState",
+          "next": null,
+          "parent": "b28",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b28": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b29",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b27"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "connection",
+              "connection"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b29": {
+          "opcode": "event_whenkeypressed",
+          "next": "b28",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "s",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 300,
+          "y": 450
+        },
+        "b30": {
+          "opcode": "kubohiroyawebrtc_sendEvent",
+          "next": "b32",
+          "parent": "b33",
+          "inputs": {
+            "TYPE": [
+              1,
+              [
+                10,
+                "ping"
+              ]
+            ],
+            "PAYLOAD": [
+              1,
+              [
+                10,
+                "{\"text\":\"Hello\"}"
+              ]
+            ],
+            "CHANNEL": [
+              1,
+              [
+                10,
+                "sample"
+              ]
+            ],
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b31": {
+          "opcode": "kubohiroyawebrtc_connectionState",
+          "next": null,
+          "parent": "b32",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b32": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b30",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b31"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "connection",
+              "connection"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b33": {
+          "opcode": "event_whenkeypressed",
+          "next": "b30",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "p",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 300,
+          "y": 510
+        },
+        "b34": {
+          "opcode": "kubohiroyawebrtc_lastMessage",
+          "next": null,
+          "parent": "b35",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b35": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b36",
+          "inputs": {
+            "VALUE": [
+              2,
+              "b34"
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "last received",
+              "message"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b36": {
+          "opcode": "event_whenkeypressed",
+          "next": "b35",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "r",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 20,
+          "y": 570
+        },
+        "b37": {
+          "opcode": "kubohiroyawebrtc_closePeer",
+          "next": "b38",
+          "parent": "b39",
+          "inputs": {
+            "PEER": [
+              1,
+              [
+                10,
+                "peer"
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b38": {
+          "opcode": "data_setvariableto",
+          "next": null,
+          "parent": "b37",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Closed"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "status",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b39": {
+          "opcode": "event_whenkeypressed",
+          "next": "b37",
+          "parent": null,
+          "inputs": {},
+          "fields": {
+            "KEY_OPTION": [
+              "x",
+              null
+            ]
+          },
+          "shadow": false,
+          "topLevel": true,
+          "x": 860,
+          "y": 570
+        }
+      },
+      "comments": {},
+      "currentCostume": 0,
+      "costumes": [
+        {
+          "name": "instructions",
+          "assetId": "",
+          "dataFormat": "svg",
+          "md5ext": "backdrop.svg",
+          "rotationCenterX": 240,
+          "rotationCenterY": 180
+        }
+      ],
+      "sounds": [],
+      "volume": 0,
+      "layerOrder": 0,
+      "tempo": 60,
+      "videoTransparency": 50,
+      "videoState": "off",
+      "textToSpeechLanguage": null
+    }
+  ],
+  "monitors": [
+    {
+      "id": "connection",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "connection"
+      },
+      "spriteName": null,
+      "value": "closed",
+      "width": 0,
+      "height": 0,
+      "x": 12,
+      "y": 190,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    },
+    {
+      "id": "message",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "last received"
+      },
+      "spriteName": null,
+      "value": "(none)",
+      "width": 0,
+      "height": 0,
+      "x": 12,
+      "y": 218,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    }
+  ],
+  "extensions": [
+    "kubohiroyawebrtc"
+  ],
+  "meta": {
+    "semver": "3.0.0",
+    "vm": "0.2.0",
+    "agent": "P3 minimal sample"
+  }
+}
