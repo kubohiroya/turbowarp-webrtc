@@ -41,7 +41,7 @@ LAN modeはpublic STUN serverを使わず、同じ部屋・同一LAN内の配置
 ローカルビルドではpackageをinstallします。
 
 ```sh
-pnpm add @kubohiroya/turbowarp-webrtc@0.7.0
+pnpm add @kubohiroya/turbowarp-webrtc@0.7.1
 ```
 
 ### wire formatの共有
