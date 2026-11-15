@@ -274,6 +274,51 @@ describe('fixed static owner contract', () => {
     expect(remove).toHaveBeenCalledTimes(1);
     expect(events.size).toBe(0);
   });
+  it('registers the same visible editors again after each project load until the owner disposes', () => {
+    // vm.loadProject disposes the runtime but keeps the extension loaded.
+    const calls: FixedInputEditorOptions[] = [];
+    const removes: ReturnType<typeof vi.fn>[] = [];
+    const listeners = new Map<string, Set<() => void>>();
+    const runtime = {
+      on: (name: string, fn: () => void) => {
+        if (!listeners.has(name)) listeners.set(name, new Set());
+        listeners.get(name)!.add(fn);
+      },
+      off: (name: string, fn: () => void) => listeners.get(name)?.delete(fn)
+    };
+    const emit = (name: string) => {
+      for (const fn of [...(listeners.get(name) ?? [])]) fn();
+    };
+    const register = (o: FixedInputEditorOptions) => {
+      calls.push(o);
+      const remove = vi.fn();
+      removes.push(remove);
+      return remove;
+    };
+    const visible = options
+      .slice(0, 2)
+      .map((o) => ({opcode: o.opcodes[0]!.slice(o.extensionId.length + 1)}));
+    const dispose = registerFixedInputEditors(
+      {gui: {blockEditors: {apiVersion: 1, registerFixedInputEditor: register}}},
+      runtime,
+      visible
+    )!;
+    const first = calls.map((o) => o.opcodes);
+    expect(first).toHaveLength(visible.length);
+    emit('RUNTIME_DISPOSED');
+    expect(removes.every((remove) => remove.mock.calls.length === 1)).toBe(true);
+    emit('PROJECT_LOADED');
+    expect(calls.slice(first.length).map((o) => o.opcodes)).toEqual(first);
+    emit('PROJECT_LOADED');
+    expect(calls).toHaveLength(first.length * 2);
+    dispose();
+    expect(removes.every((remove) => remove.mock.calls.length === 1)).toBe(true);
+    expect(listeners.get('RUNTIME_DISPOSED')?.size ?? 0).toBe(0);
+    expect(listeners.get('PROJECT_LOADED')?.size ?? 0).toBe(0);
+    emit('RUNTIME_DISPOSED');
+    emit('PROJECT_LOADED');
+    expect(calls).toHaveLength(first.length * 2);
+  });
   it('partial registration rollback', () => {
     const remove = vi.fn();
     let count = 0;
