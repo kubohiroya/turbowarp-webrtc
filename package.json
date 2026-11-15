@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-webrtc",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Manual WebRTC DataChannel pairing for TurboWarp extensions.",
   "author": {
     "name": "Hiroya Kubo",
