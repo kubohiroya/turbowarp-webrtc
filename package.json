@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-webrtc",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Manual WebRTC DataChannel pairing for TurboWarp extensions.",
   "author": {
     "name": "Hiroya Kubo",
@@ -89,5 +89,27 @@
     "revision": "e96cd5519f054505bb1847c80df64384d55499a1",
     "revisionRole": "base-commit",
     "sourceState": "local-release-overlay"
+  },
+  "turbowarpExtension": {
+    "resourceDeclaration": {
+      "schemaVersion": 1,
+      "resources": [
+        {
+          "type": "network",
+          "usage": "required",
+          "purpose": {
+            "en": "Exchange project data between devices over WebRTC",
+            "ja": "WebRTCで端末間の作品データを送受信する"
+          },
+          "data": {
+            "direction": "bidirectional",
+            "content": {
+              "en": "Connection negotiation and project-defined DataChannel messages, not camera or microphone streams",
+              "ja": "接続確立の通信と作品が指定するDataChannelメッセージ。カメラ・マイクのストリームではない"
+            }
+          }
+        }
+      ]
+    }
   }
 }
